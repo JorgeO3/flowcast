@@ -8,7 +8,6 @@ deployments_directory := $(project_root)/deployments
 
 # Commands
 deno_command := deno run --allow-read --allow-write --allow-net --allow-env
-
 docker_compose_file := $(deployments_directory)/docker-compose.yaml
 
 # Minio service configuration
