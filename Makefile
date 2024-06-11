@@ -27,6 +27,12 @@ MINIO_DEFAULT_BUCKETS=$(minio_buckets) ;\
 docker compose -f $(docker_compose_file)
 endef
 
+define PROXY_SERVICE_ENVS
+export 
+
+endef
+
+
 # Command to download songs
 .PHONY: download-songs
 download-songs:

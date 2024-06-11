@@ -26,3 +26,6 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+  # TODO: finish this
+  proxy-service:
+    image: .
