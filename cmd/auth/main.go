@@ -1,19 +1,19 @@
-package main
+package auth
 
 import (
 	"log"
 
 	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/proxy"
+	"gitlab.com/JorgeO3/flowcast/internal/auth/app"
 )
 
 func main() {
 	// Configuration
-	cfg, err := configs.LoadProxyConfig()
+	cfg, err := configs.LoadAuthConfig()
 	if err != nil {
 		log.Fatalf("Config error: %s", err)
 	}
 
 	// Start server
-	proxy.Run(cfg)
+	app.Run(cfg)
 }

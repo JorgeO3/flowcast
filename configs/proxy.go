@@ -1,12 +1,10 @@
 package configs
 
 import (
-	"log"
-
 	"github.com/caarlos0/env/v11"
 )
 
-type Config struct {
+type ProxyConfig struct {
 	AppName        string `env:"APP_NAME"`
 	Version        string `env:"VERSION"`
 	LogLevel       string `env:"LOG_LEVEL"`
@@ -18,10 +16,10 @@ type Config struct {
 	GrpcAuthPort   string `env:"GRPC_AUTH_PORT"`
 }
 
-func NewProxyConfig() *Config {
-	cfg := &Config{}
+func LoadProxyConfig() (*ProxyConfig, error) {
+	cfg := &ProxyConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("error parsing environment variables - e: %s", err)
+		return &ProxyConfig{}, nil
 	}
-	return &Config{}
+	return cfg, nil
 }
