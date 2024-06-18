@@ -1,4 +1,5 @@
-package auth
+// Main file for the auth service
+package main
 
 import (
 	"log"

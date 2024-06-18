@@ -1,3 +1,4 @@
+// Package repository contains the implementation of the user repository for PostgreSQL.
 package repository
 
 import (
@@ -9,14 +10,12 @@ import (
 
 // PostgresUserRepo is the implementation of the user repository for PostgreSQL.
 type PostgresUserRepo struct {
-	db *postgres.Postgres
+	*postgres.Postgres
 }
 
 // NewPostgresUserRepo creates a new instance of PostgresUserRepo.
 func NewPostgresUserRepo(db *postgres.Postgres) *PostgresUserRepo {
-	return &PostgresUserRepo{
-		db: db,
-	}
+	return &PostgresUserRepo{db}
 }
 
 // FindByUsername searches for a user by their username.
@@ -29,9 +28,42 @@ func (p *PostgresUserRepo) FindByID(ctx context.Context, id int) (*entity.User, 
 	return &entity.User{}, nil
 }
 
-// Save saves a new user to the database.
+const insertUserQuery = `
+	INSERT INTO users
+	(
+		username,
+		email,
+		password,
+		full_name,
+		birth_date,
+		gender,
+		phone_number,
+		status,
+		subscription_status,
+		created_at,
+		updated_at
+	)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+	ON CONFLICT DO NOTHING
+`
+
+// Save -.
 func (p *PostgresUserRepo) Save(ctx context.Context, user *entity.User) error {
-	return nil
+	args := []any{
+		user.Username,
+		user.Email,
+		user.Password,
+		user.FullName,
+		user.Birthdate,
+		user.Gender,
+		user.Phone,
+		user.AuthStatus,
+		user.SubscriptionStatus,
+		user.CreatedAt,
+		user.UpdatedAt,
+	}
+	_, err := p.Pool.Exec(ctx, insertUserQuery, args...)
+	return err
 }
 
 // Update updates an existing user in the database.

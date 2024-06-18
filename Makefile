@@ -1,14 +1,40 @@
-# Define the root directory
+# Define the root configs
 project_root := $(CURDIR)
+go_root_path := gitlab.com/JorgeO3/flowcast
+
 
 # Directories
 songs_directory := $(project_root)/songs
 scripts_directory := $(project_root)/scripts
 deployments_directory := $(project_root)/deployments
+cmd_directory := $(go_root_path)/cmd
+migrations_directory := $(go_root_path)/migrations
 
 # Commands
 deno_command := deno run --allow-read --allow-write --allow-net --allow-env
 docker_compose_file := $(deployments_directory)/docker-compose.yaml
+
+# Postgres service configuration
+postgres_host := "localhost"
+postgres_port := 5432
+postgres_user := "jorge123"
+postgres_password := "jorge123"
+postgres_db_name := "auth_service"
+
+define POSTGRES_ENVS
+export POSTGRES_PORT=$(postgres_port) \
+POSTGRES_USER=$(postgres_user) \
+POSTGRES_PASSWORD=$(postgres_password) \
+POSTGRES_DB=$(postgres_db_name);
+endef
+
+# Adminer service configuration
+adminer_port := 8080
+
+define ADMINER_ENVS
+export ADMINER_PORT=$(adminer_port);
+endef
+
 
 # Minio service configuration
 minio_web_port := 9000
@@ -17,21 +43,50 @@ minio_root_user := jorge123
 minio_root_password := jorge123
 minio_buckets := music-uploads,music-processed
 
-# Encapsulate environment variables and Docker Compose command
-define DOCKER_COMPOSE_CMD
-export WEB_PORT=$(minio_web_port) \
-API_PORT=$(minio_api_port) \
+define MINIO_ENVS
+export MINIO_WEB_PORT=$(minio_web_port) \
+MINIO_API_PORT=$(minio_api_port) \
 MINIO_ROOT_USER=$(minio_root_user) \
 MINIO_ROOT_PASSWORD=$(minio_root_password) \
-MINIO_DEFAULT_BUCKETS=$(minio_buckets) ;\
-docker compose -f $(docker_compose_file)
+MINIO_DEFAULT_BUCKETS=$(minio_buckets);
 endef
 
-define PROXY_SERVICE_ENVS
-export 
+# Auth service configuration
+auth_app_name := "auth-service"
+auth_http_host := "0.0.0.0"
+auth_http_port := "4100"
+auth_database_url := "postgresql://$(postgres_user):$(postgres_password)@$(postgres_host):5432/$(postgres_db_name)?sslmode=disable"
+auth_version := "v1.0.0"
+auth_log_level := "debug"
+migra
 
+
+define AUTH_ENVS
+export APP_NAME=$(auth_app_name) \
+HTTP_HOST=$(auth_http_host) \
+HTTP_PORT=$(auth_http_port) \
+DB_NAME=$(postgres_db_name) \
+PG_URL=$(auth_database_url) \
+VERSION=$(auth_version) \
+LOG_LEVEL=$(auth_log_level);
 endef
 
+
+# Encapsulate environment variables and Docker Compose command
+define DOCKER_COMPOSE_CMD
+$(POSTGRES_ENVS) \
+$(ADMINER_ENVS) \
+$(MINIO_ENVS) \
+$(AUTH_ENVS) \
+docker-compose -f $(docker_compose_file)
+endef
+
+
+.PHONY: auth-service
+auth-service:
+	@echo "Starting auth service..."
+	@$(AUTH_ENVS) go run $(cmd_directory)/auth
+	@echo "Auth service is up and running."
 
 # Command to download songs
 .PHONY: download-songs

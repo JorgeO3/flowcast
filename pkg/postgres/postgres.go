@@ -1,3 +1,4 @@
+// Package postgres provides a series of utilities to interact with PostgreSQL through the Pgx driver.
 package postgres
 
 import (
@@ -6,7 +7,10 @@ import (
 	"log"
 	"time"
 
-	pgx "github.com/jackc/pgx/v5/pgxpool"
+	"github.com/golang-migrate/migrate"
+	"github.com/golang-migrate/migrate/database/postgres"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 const (
@@ -15,14 +19,17 @@ const (
 	defaultConnTimeout  = time.Second
 )
 
+// Postgres is a struct that holds the connection pool.
 type Postgres struct {
 	maxPoolSize  int
 	connAttempts int
 	connTimeout  time.Duration
 
-	pool *pgx.Pool
+	Pool   *pgxpool.Pool
+	config *pgxpool.Config
 }
 
+// New creates a new instance of Postgres.
 func New(connectionString string, options ...Option) (*Postgres, error) {
 	pg := &Postgres{
 		maxPoolSize:  defaultMaxPoolSize,
@@ -47,8 +54,8 @@ func New(connectionString string, options ...Option) (*Postgres, error) {
 	return pg, nil
 }
 
-func configurePool(connectionString string, pg *Postgres) (*pgx.Config, error) {
-	poolConfig, err := pgx.ParseConfig(connectionString)
+func configurePool(connectionString string, pg *Postgres) (*pgxpool.Config, error) {
+	poolConfig, err := pgxpool.ParseConfig(connectionString)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +64,10 @@ func configurePool(connectionString string, pg *Postgres) (*pgx.Config, error) {
 	return poolConfig, nil
 }
 
-func connectWithRetry(pg *Postgres, poolConfig *pgx.Config) error {
+func connectWithRetry(pg *Postgres, poolConfig *pgxpool.Config) error {
 	var connectionError error
 	for pg.connAttempts > 0 {
-		pg.pool, connectionError = pgx.NewWithConfig(context.Background(), poolConfig)
+		pg.Pool, connectionError = pgxpool.NewWithConfig(context.Background(), poolConfig)
 		if connectionError == nil {
 			return nil
 		}
@@ -73,8 +80,35 @@ func connectWithRetry(pg *Postgres, poolConfig *pgx.Config) error {
 	return fmt.Errorf("all connection attempts failed: %w", connectionError)
 }
 
+// Close closes the connection pool.
 func (p *Postgres) Close() {
-	if p.pool != nil {
-		p.pool.Close()
+	if p.Pool != nil {
+		p.Pool.Close()
 	}
+}
+
+// RunMigrations runs the database migrations.
+func (p *Postgres) RunMigrations(migrationsPath string, databaseName string) {
+	db := stdlib.OpenDB(*p.Pool.Config().ConnConfig)
+	defer db.Close()
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatalf("Could not create driver: %v\n", err)
+	}
+
+	// Inicialización de las migraciones
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		databaseName, driver)
+	if err != nil {
+		log.Fatalf("Could not create migrate instance: %v\n", err)
+	}
+
+	// Ejecución de las migraciones
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("Could not run up migrations: %v\n", err)
+	}
+
+	log.Println("Migrations ran successfully")
 }
