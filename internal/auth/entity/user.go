@@ -8,59 +8,59 @@ import (
 type (
 	// AuthStatus represents the status of a user's authentication.
 	AuthStatus string
-	// SubscriptionStatus represents the status of a user's subscription.
-	SubscriptionStatus string
-	// OauthProvider represents the provider of the OAuth service.
-	OauthProvider string
+	// SubsStatus represents the status of a user's subscription.
+	SubsStatus string
+	// OAuthProvider represents the provider of the OAuth service.
+	OAuthProvider string
 	// UserGender represents the gender of a user.
 	UserGender string
 )
 
 const (
-	authActive   AuthStatus = "active"
-	authInactive AuthStatus = "inactive"
-	authLocked   AuthStatus = "locked"
+	AuthActive   AuthStatus = "active"   // AuthActive is the active status of a user's authentication.
+	AuthInactive AuthStatus = "inactive" // AuthInactive is the inactive status of a user's authentication.
+	AuthLocked   AuthStatus = "locked"   // AuthLocked is the locked status of a user's authentication.
 
-	subscriptionActive    SubscriptionStatus = "active"
-	subscriptionInactive  SubscriptionStatus = "inactive"
-	subscriptionSuspended SubscriptionStatus = "suspended"
+	SubsActive    SubsStatus = "active"    // SubsActive is the active status of a user's subscription.
+	SubsInactive  SubsStatus = "inactive"  // SubsInactive is the inactive status of a user's subscription.
+	SubsSuspended SubsStatus = "suspended" // SubsSuspended is the suspended status of a user's subscription.
 
-	googleProvider   OauthProvider = "google"
-	githubProvider   OauthProvider = "github"
-	facebookProvider OauthProvider = "facebook"
+	GoogleProvider   OAuthProvider = "google"   // GoogleProvider is the Google OAuth provider.
+	GithubProvider   OAuthProvider = "github"   // GithubProvider is the Github OAuth provider.
+	FacebookProvider OAuthProvider = "facebook" // FacebookProvider is the Facebook OAuth provider.
 
-	maleGender      UserGender = "male"
-	femaleGender    UserGender = "female"
-	nonBinaryGender UserGender = "nonbinary"
-	otherGender     UserGender = "other"
+	MaleGender      UserGender = "male"      // MaleGender -
+	FemaleGender    UserGender = "female"    // FemaleGender -.
+	NonBinaryGender UserGender = "nonbinary" // NonBinaryGender -.
+	OtherGender     UserGender = "other"     // OtherGender -.
 )
 
 // User represents a user entity.
 type User struct {
-	ID                 int
-	Username           string
-	Email              string
-	Password           string
-	FullName           string
-	Birthdate          time.Time
-	Gender             UserGender
-	Phone              string
-	AuthStatus         AuthStatus
-	SubscriptionStatus SubscriptionStatus
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	ID         int
+	Username   string
+	Email      string
+	Password   string
+	FullName   string
+	Birthdate  time.Time
+	Gender     UserGender
+	Phone      string
+	AuthStatus AuthStatus
+	SubsStatus SubsStatus
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // NewUser creates a new instance of User.
 func NewUser(username, email, password string, options ...UserOption) (*User, error) {
 	user := &User{
-		Username:           username,
-		Email:              email,
-		Password:           password,
-		SubscriptionStatus: subscriptionInactive,
-		AuthStatus:         authInactive,
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
+		Username:   username,
+		Email:      email,
+		Password:   password,
+		SubsStatus: SubsInactive,
+		AuthStatus: AuthInactive,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	for _, option := range options {
@@ -108,15 +108,15 @@ func WithPhone(phone string) UserOption {
 
 func isValidAuthStatus(status AuthStatus) bool {
 	switch status {
-	case authActive, authInactive, authLocked:
+	case AuthActive, AuthInactive, AuthLocked:
 		return true
 	}
 	return false
 }
 
-func isValidSubscriptionStatus(status SubscriptionStatus) bool {
+func isValidSubsStatus(status SubsStatus) bool {
 	switch status {
-	case subscriptionActive, subscriptionInactive, subscriptionSuspended:
+	case SubsActive, SubsInactive, SubsSuspended:
 		return true
 	}
 	return false
@@ -124,7 +124,7 @@ func isValidSubscriptionStatus(status SubscriptionStatus) bool {
 
 func isValidGender(gender UserGender) bool {
 	switch gender {
-	case maleGender, femaleGender, nonBinaryGender, otherGender:
+	case MaleGender, FemaleGender, NonBinaryGender, OtherGender:
 		return true
 	}
 	return false
@@ -133,7 +133,7 @@ func isValidGender(gender UserGender) bool {
 func (u *User) validate() error {
 	validations := map[string]func() bool{
 		"auth status":         func() bool { return isValidAuthStatus(u.AuthStatus) },
-		"subscription status": func() bool { return isValidSubscriptionStatus(u.SubscriptionStatus) },
+		"subscription status": func() bool { return isValidSubsStatus(u.SubsStatus) },
 		"gender":              func() bool { return isValidGender(u.Gender) },
 	}
 

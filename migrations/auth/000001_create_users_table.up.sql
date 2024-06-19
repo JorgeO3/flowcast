@@ -19,31 +19,31 @@ CREATE TYPE "auth_status" AS ENUM (
 
 CREATE TABLE "users" (
   "id" serial PRIMARY KEY,
-  "username" varchar,
-  "full_name" varchar,
-  "birth_date" date,
-  "gender" user_gender,
-  "email" varchar,
-  "phone_number" varchar,
-  "password" varchar(60),
-  "status" auth_status,
-  "subscription_status" subscription_status,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "username" varchar UNIQUE NOT NULL,
+  "full_name" varchar NOT NULL,
+  "birth_date" date NOT NULL,
+  "gender" user_gender NOT NULL,
+  "email" varchar UNIQUE NOT NULL,
+  "phone_number" varchar UNIQUE NOT NULL,
+  "password" varchar(60) NOT NULL,
+  "status" auth_status NOT NULL,
+  "subscription_status" subscription_status NOT NULL,
+  "created_at" timestamp NOT NULL,
+  "updated_at" timestamp NOT NULL
 );
 
 CREATE TABLE "user_preference" (
   "id" serial PRIMARY KEY,
-  "user_id" int UNIQUE,
-  "email_notifications" bool,
-  "sms_notifications" bool
+  "user_id" int UNIQUE NOT NULL,
+  "email_notifications" bool NOT NULL,
+  "sms_notifications" bool NOT NULL
 );
 
 CREATE TABLE "social_links" (
   "id" serial PRIMARY KEY,
-  "user_id" int,
-  "platform" varchar(50),
-  "url" varchar(255)
+  "user_id" int NOT NULL,
+  "platform" varchar(50) NOT NULL,
+  "url" varchar(255) NOT NULL
 );
 
 ALTER TABLE "user_preference" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

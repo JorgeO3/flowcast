@@ -13,6 +13,7 @@ import (
 	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
+	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
 )
 
 // Run is the main function that sets up and starts the authentication service.
@@ -30,20 +31,26 @@ func Run(cfg *configs.AuthConfig) {
 	// Run database migrations using the migrations path and database name specified in the configuration.
 	pg.RunMigrations(cfg.MigrationsPath, cfg.DBName)
 
+	// Initialize the transaction manager using the PostgreSQL database connection.
+	txManager := transaction.NewPgxTxManager(pg.Pool)
+
 	// Initialize the user repository using the PostgreSQL database connection.
-	userRepository := repository.NewPostgresUserRepo(pg)
+	userRepo := repository.NewPostgresUserRepo(pg)
+
+	// Initialize the user preference repository using the PostgreSQL database connection.
+	userPrefRepo := repository.NewPostgresUserPrefRepo(pg)
 
 	// Initialize the use cases related to user authentication.
-	userRegistrationUseCase := usecase.NewUserRegistrationUseCase(userRepository)
-	userAuthenticationUseCase := usecase.NewUserAuthenticationUseCase(userRepository)
-	confirmRegistrationUseCase := usecase.NewConfirmRegistrationUseCase(userRepository)
+	userRegUC := usecase.NewUserRegUC(userRepo, userPrefRepo, txManager)
+	userAuthUC := usecase.NewUserAuthUC(userRepo)
+	confirmRegUC := usecase.NewConfirmRegUC(userRepo)
 
 	// Initialize the authentication controller with the use cases and logger.
 	authController := &controller.AuthController{
-		UserRegistrationUseCase:    userRegistrationUseCase,
-		UserAuthenticationUseCase:  userAuthenticationUseCase,
-		ConfirmRegistrationUseCase: confirmRegistrationUseCase,
-		Logger:                     logg,
+		UserRegUC:    userRegUC,
+		UserAuthUC:   userAuthUC,
+		ConfirmRegUC: confirmRegUC,
+		Logger:       logg,
 	}
 
 	// Create a new router using the chi library.
