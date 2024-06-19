@@ -20,6 +20,7 @@ func NewPostgresUserRepo(db *postgres.Postgres) *PostgresUserRepo {
 
 // FindByUsername searches for a user by their username.
 func (p *PostgresUserRepo) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
+	tx, err := p.Pool.Begin(ctx)
 	return &entity.User{}, nil
 }
 

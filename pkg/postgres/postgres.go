@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file" // Importa el paquete de
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 )
@@ -97,10 +99,13 @@ func (p *Postgres) RunMigrations(migrationsPath string, databaseName string) {
 		log.Fatalf("Could not create driver: %v\n", err)
 	}
 
+	// Asegúrate de que migrationsPath tiene el esquema "file://"
+	if !strings.HasPrefix(migrationsPath, "file://") {
+		migrationsPath = "file://" + migrationsPath
+	}
+
 	// Inicialización de las migraciones
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+migrationsPath,
-		databaseName, driver)
+	m, err := migrate.NewWithDatabaseInstance(migrationsPath, databaseName, driver)
 	if err != nil {
 		log.Fatalf("Could not create migrate instance: %v\n", err)
 	}

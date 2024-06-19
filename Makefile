@@ -2,13 +2,12 @@
 project_root := $(CURDIR)
 go_root_path := gitlab.com/JorgeO3/flowcast
 
-
 # Directories
 songs_directory := $(project_root)/songs
 scripts_directory := $(project_root)/scripts
 deployments_directory := $(project_root)/deployments
-cmd_directory := $(go_root_path)/cmd
-migrations_directory := $(go_root_path)/migrations
+cmd_directory := $(project_root)/cmd
+migrations_directory := $(project_root)/migrations
 
 # Commands
 deno_command := deno run --allow-read --allow-write --allow-net --allow-env
@@ -35,7 +34,6 @@ define ADMINER_ENVS
 export ADMINER_PORT=$(adminer_port);
 endef
 
-
 # Minio service configuration
 minio_web_port := 9000
 minio_api_port := 9001
@@ -58,19 +56,18 @@ auth_http_port := "4100"
 auth_database_url := "postgresql://$(postgres_user):$(postgres_password)@$(postgres_host):5432/$(postgres_db_name)?sslmode=disable"
 auth_version := "v1.0.0"
 auth_log_level := "debug"
-migra
-
+migration_dir := $(migrations_directory)/auth
 
 define AUTH_ENVS
 export APP_NAME=$(auth_app_name) \
 HTTP_HOST=$(auth_http_host) \
 HTTP_PORT=$(auth_http_port) \
 DB_NAME=$(postgres_db_name) \
+MIGRATIONS_PATH=$(migration_dir) \
 PG_URL=$(auth_database_url) \
 VERSION=$(auth_version) \
 LOG_LEVEL=$(auth_log_level);
 endef
-
 
 # Encapsulate environment variables and Docker Compose command
 define DOCKER_COMPOSE_CMD
@@ -80,7 +77,6 @@ $(MINIO_ENVS) \
 $(AUTH_ENVS) \
 docker-compose -f $(docker_compose_file)
 endef
-
 
 .PHONY: auth-service
 auth-service:

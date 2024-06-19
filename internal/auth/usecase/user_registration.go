@@ -10,15 +10,29 @@ import (
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 )
 
+// SocialLink represents a social media link in json
+type SocialLink struct {
+	Platform string `json:"platform" valid:"required,alphanum"`
+	URL      string `json:"url" valid:"required,url"`
+}
+
 // UserRegistrationInput represents the input data required for user registration.
 type UserRegistrationInput struct {
-	Username  string    `json:"username" valid:"required,alpha"`
+	// Entity user
+	Username  string    `json:"username" valid:"required,alphanum"`
 	Email     string    `json:"email" valid:"required,email"`
 	Password  string    `json:"password" valid:"required"`
 	FullName  string    `json:"fullname" valid:"required"`
 	Birthdate time.Time `json:"birthdate" valid:"required"`
 	Gender    string    `json:"gender" valid:"required"`
 	Phone     string    `json:"phone" valid:"required,numeric"`
+
+	// Entity user_preferences
+	EmailNotif bool `json:"emailNotif" valid:"required"`
+	SMSNotif   bool `json:"smsNotif" valid:"required"`
+
+	// Entity social_links
+	SocialLinks []SocialLink `json:"socialLinks"`
 }
 
 // UserRegistrationOutput represents the output data returned after user registration.
@@ -48,6 +62,8 @@ func (uc *UserRegistrationUseCase) Execute(ctx context.Context, input UserRegist
 		return UserRegistrationOutput{}, err
 	}
 
+	tx, err := uc.UserRepository.
+
 	// Create a new user entity
 	user, err := entity.NewUser(
 		input.Username,
@@ -69,5 +85,8 @@ func (uc *UserRegistrationUseCase) Execute(ctx context.Context, input UserRegist
 		return UserRegistrationOutput{}, err
 	}
 
+	// TODO: finish the implementation
+	// send a confirmation email to the user
+	// fill the output with the user ID, username, and email
 	return UserRegistrationOutput{}, nil
 }

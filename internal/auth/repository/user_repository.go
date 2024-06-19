@@ -6,6 +6,7 @@ import (
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 )
 
+// UserRepository is the interface that defines the methods for the user repository.
 type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*entity.User, error)
 	FindByID(ctx context.Context, id int) (*entity.User, error)

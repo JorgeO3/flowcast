@@ -1,3 +1,4 @@
+// Package controller provides the controller layer for the authentication service.
 package controller
 
 import (
@@ -10,6 +11,7 @@ import (
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 )
 
+// AuthController is a controller that handles authentication-related requests.
 type AuthController struct {
 	UserRegistrationUseCase    *usecase.UserRegistrationUseCase
 	UserAuthenticationUseCase  *usecase.UserAuthenticationUseCase
@@ -17,6 +19,7 @@ type AuthController struct {
 	Logger                     logger.Interface
 }
 
+// Register is an HTTP handler that processes user registration requests.
 func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	var input usecase.UserRegistrationInput
 
@@ -44,10 +47,35 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Authenticate is an HTTP handler that processes user authentication requests.
 func (c *AuthController) Authenticate(w http.ResponseWriter, r *http.Request) {
+	var input usecase.UserAuthenticationInput
 
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		c.Logger.Info("Failed to decode user input for authentication - error: %s", err)
+		return
+	}
+
+	output, err := c.UserAuthenticationUseCase.Execute(ctx, input, c.Logger)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.Logger.Error("Failed to authenticate user", "error", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(output); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		c.Logger.Error("Failed to encode response", "error", err)
+		return
+	}
 }
 
+// ConfirmRegistration is an HTTP handler that processes user registration confirmation requests.
 func (c *AuthController) ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
 
 }
