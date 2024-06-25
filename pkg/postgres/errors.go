@@ -25,7 +25,7 @@ const (
 	ErrCodeInvalidForeignKey         ErrorCode = "42830"
 	ErrCodeSerializationFailure      ErrorCode = "40001"
 	ErrCodeDeadlockDetected          ErrorCode = "40P01"
-	ErrCodeNotFound                  ErrorCode = "P0002" // Custom error code for not found errors
+	ErrCodeNotFound                  ErrorCode = "P0002" // Custom error code for resource not found
 )
 
 // Error is a custom error type that represents a PostgreSQL error.
@@ -62,6 +62,5 @@ func MapError(err error) error {
 			Message: "not found",
 		}
 	}
-
 	return err
 }

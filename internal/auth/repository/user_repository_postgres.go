@@ -4,7 +4,6 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
@@ -111,14 +110,7 @@ func (p *PostgresUserRepo) findUser(ctx context.Context, query string, arg inter
 	}
 
 	err := p.Pool.QueryRow(ctx, query, arg).Scan(dest...)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil // Return nil if no user is found
-		}
-		return nil, err // Return the error if something went wrong
-	}
-
-	return &user, nil
+	return &user, postgres.MapError(err)
 }
 
 // Save saves a user in the database.

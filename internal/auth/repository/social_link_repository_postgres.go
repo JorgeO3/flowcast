@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
@@ -56,14 +55,7 @@ func (p *PostgresSocialLinkRepo) FindByUserID(ctx context.Context, userID int) (
 	}
 
 	err := p.Pool.QueryRow(ctx, getSocialLinksQuery, userID).Scan(dest...)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil // Return nil if no social link is found
-		}
-		return nil, err // Return the error if something went wrong
-	}
-
-	return &socialLink, nil
+	return &socialLink, postgres.MapError(err)
 }
 
 // FindByUserIDTx retrieves a social link by user ID within a transaction.
@@ -77,14 +69,7 @@ func (p *PostgresSocialLinkRepo) FindByUserIDTx(ctx context.Context, tx transact
 	}
 
 	err := tx.QueryRow(ctx, getSocialLinksQuery, userID).Scan(dest...)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil // Return nil if no social link is found
-		}
-		return nil, err // Return the error if something went wrong
-	}
-
-	return &socialLink, err
+	return &socialLink, postgres.MapError(err)
 }
 
 // SaveTx saves multiple social links within a transaction.
@@ -97,11 +82,7 @@ func (p *PostgresSocialLinkRepo) SaveTx(ctx context.Context, tx transaction.Tx, 
 	insertSocialLinksQuery := fmt.Sprintf(insertSocialLinksHeaderQuery, strings.Join(valueStrings, ","))
 
 	_, err := tx.Exec(ctx, insertSocialLinksQuery, args...)
-	if err != nil {
-		return fmt.Errorf("failed to execute insert social links query: %w", err)
-	}
-
-	return nil
+	return postgres.MapError(err)
 }
 
 // Save saves multiple social links.
@@ -114,11 +95,7 @@ func (p *PostgresSocialLinkRepo) Save(ctx context.Context, socialLinks []*entity
 	insertSocialLinksQuery := fmt.Sprintf(insertSocialLinksHeaderQuery, strings.Join(valueStrings, ","))
 
 	_, err := p.Pool.Exec(ctx, insertSocialLinksQuery, args...)
-	if err != nil {
-		return fmt.Errorf("failed to execute insert social links query: %w", err)
-	}
-
-	return nil
+	return postgres.MapError(err)
 }
 
 // Update updates a social link.
@@ -130,11 +107,7 @@ func (p *PostgresSocialLinkRepo) Update(ctx context.Context, socialLink *entity.
 	}
 
 	_, err := p.Pool.Exec(ctx, updateSocialLinksQuery, args...)
-	if err != nil {
-		return fmt.Errorf("failed to execute update social links query: %w", err)
-	}
-
-	return nil
+	return postgres.MapError(err)
 }
 
 // buildSocialLinkInsertArgs constructs the arguments and value strings for inserting social links.

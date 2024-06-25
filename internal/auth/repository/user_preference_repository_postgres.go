@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
@@ -58,14 +57,7 @@ func (p *PostgresUserPrefRepo) FindByUserID(ctx context.Context, userID int) (*e
 	}
 
 	err := p.Pool.QueryRow(ctx, searchUserPrefQuery, userID).Scan(dest...)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil // Return nil if no user preference is found
-		}
-		return nil, err // Return the error if something went wrong
-	}
-
-	return &userPref, err
+	return &userPref, postgres.MapError(err)
 }
 
 // Save saves a user preference.
@@ -77,7 +69,7 @@ func (p *PostgresUserPrefRepo) Save(ctx context.Context, tx transaction.Tx, user
 	}
 
 	_, err := tx.Exec(ctx, insertUserPrefQuery, args...)
-	return err
+	return postgres.MapError(err)
 }
 
 // Update updates a user preference.
@@ -88,5 +80,5 @@ func (p *PostgresUserPrefRepo) Update(ctx context.Context, userPref *entity.User
 		userPref.UserID,
 	}
 	_, err := p.Pool.Exec(ctx, updateUserPrefQuery, args...)
-	return err
+	return postgres.MapError(err)
 }

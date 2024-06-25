@@ -2,9 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
@@ -45,13 +43,7 @@ func (p PostgresEmailVerificationTokenRepo) FindByUserID(ctx context.Context, us
 	}
 
 	err := p.Pool.QueryRow(ctx, getEmailVerificationTokenQuery, userID).Scan(dest...)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil // Return nil if no social link is found
-		}
-		return nil, err // Return the error if something went wrong
-	}
-	return &emailVerificationT, nil
+	return &emailVerificationT, postgres.MapError(err)
 }
 
 // SaveTx implements EmailVerificationTokenRepo.
@@ -63,10 +55,7 @@ func (p PostgresEmailVerificationTokenRepo) SaveTx(ctx context.Context, tx trans
 	}
 
 	_, err := tx.Exec(ctx, insertEmailVerificationTokenQuery, args...)
-	if err != nil {
-		return fmt.Errorf("failed to execute insert email verification token: %w", err)
-	}
-	return nil
+	return postgres.MapError(err)
 }
 
 // NewPostgresEmailVerificationTokenRepo -.
