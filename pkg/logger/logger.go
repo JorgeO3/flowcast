@@ -34,9 +34,9 @@ func New(level string) Interface {
 	zerolog.SetGlobalLevel(parseLogLevel(level))
 
 	logger := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
-	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-		return shortenPath(file, line)
-	}
+	// zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+	// 	return shortenPath(file, line)
+	// }
 	return &Logger{
 		logger: &logger,
 	}
