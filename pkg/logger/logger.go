@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,29 +31,44 @@ var _ Interface = (*Logger)(nil)
 
 // New crea una nueva instancia de Logger con el nivel de log especificado.
 func New(level string) Interface {
-	var l zerolog.Level
+	zerolog.SetGlobalLevel(parseLogLevel(level))
 
-	switch strings.ToLower(level) {
-	case "error":
-		l = zerolog.ErrorLevel
-	case "warn":
-		l = zerolog.WarnLevel
-	case "info":
-		l = zerolog.InfoLevel
-	case "debug":
-		l = zerolog.DebugLevel
-	default:
-		l = zerolog.InfoLevel
+	logger := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		return shortenPath(file, line)
 	}
-
-	zerolog.SetGlobalLevel(l)
-
-	skipFrameCount := 3
-	logger := zerolog.New(os.Stdout).With().Timestamp().CallerWithSkipFrameCount(zerolog.CallerSkipFrameCount + skipFrameCount).Logger()
-
 	return &Logger{
 		logger: &logger,
 	}
+}
+
+// parseLogLevel convierte el nivel de log de string a zerolog.Level.
+func parseLogLevel(level string) zerolog.Level {
+	switch strings.ToLower(level) {
+	case "error":
+		return zerolog.ErrorLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "debug":
+		return zerolog.DebugLevel
+	default:
+		return zerolog.InfoLevel
+	}
+}
+
+// shortenPath recorta el path hasta el directorio del proyecto.
+func shortenPath(file string, line int) string {
+	short := file
+	for i := len(file) - 1; i > 0; i-- {
+		if file[i] == '/' {
+			short = file[i+1:]
+			break
+		}
+	}
+	file = short
+	return file + ":" + strconv.Itoa(line)
 }
 
 // Debug registra un mensaje de depuración.
