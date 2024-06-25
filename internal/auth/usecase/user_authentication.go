@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/asaskevich/govalidator"
+	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 )
@@ -23,27 +24,28 @@ type UserAuthOutput struct {
 // UserAuthUC handles the user authentication logic.
 type UserAuthUC struct {
 	UserRepo repository.UserRepo
+	Logg     logger.Interface
 }
 
 // NewUserAuthUC creates a new instance of UserAuthUC with the provided repository.
-func NewUserAuthUC(userRepo repository.UserRepo) *UserAuthUC {
-	return &UserAuthUC{UserRepo: userRepo}
+func NewUserAuthUC(userRepo repository.UserRepo, logg logger.Interface) *UserAuthUC {
+	return &UserAuthUC{UserRepo: userRepo, Logg: logg}
 }
 
 // Execute performs the user authentication and returns the result.
-func (uc *UserAuthUC) Execute(ctx context.Context, input UserAuthInput, logg logger.Interface) (UserAuthOutput, error) {
+func (uc *UserAuthUC) Execute(ctx context.Context, input UserAuthInput, cfg *configs.AuthConfig) (UserAuthOutput, error) {
 
 	// Validate input data
 	ok, err := govalidator.ValidateStruct(input)
 	if !ok {
-		logg.Info("Invalid input data for user authentication")
+		uc.Logg.Info("Invalid input data for user authentication")
 		return UserAuthOutput{}, err
 	}
 
 	// Retrieve user details by email
 	_, err = uc.UserRepo.FindByEmail(ctx, input.Email)
 	if err != nil {
-		logg.Error("Failed to find user by email", "error", err)
+		uc.Logg.Error("Failed to find user by email", "error", err)
 		return UserAuthOutput{}, err
 	}
 

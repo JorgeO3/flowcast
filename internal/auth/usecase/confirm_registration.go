@@ -4,6 +4,7 @@ package usecase
 import (
 	"context"
 
+	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 )
@@ -22,21 +23,23 @@ type ConfirmRegOutput struct {
 // ConfirmRegUC handles the user registration confirmation logic.
 type ConfirmRegUC struct {
 	UserRepo repository.UserRepo
+	Logg     logger.Interface
 }
 
 // NewConfirmRegUC creates a new instance of ConfirmRegUC.
-func NewConfirmRegUC(userRepo repository.UserRepo) *ConfirmRegUC {
+func NewConfirmRegUC(userRepo repository.UserRepo, logg logger.Interface) *ConfirmRegUC {
 	return &ConfirmRegUC{
 		UserRepo: userRepo,
+		Logg:     logg,
 	}
 }
 
 // Execute performs the user registration confirmation.
-func (uc *ConfirmRegUC) Execute(ctx context.Context, input ConfirmRegInput, logg logger.Interface) (ConfirmRegOutput, error) {
+func (uc *ConfirmRegUC) Execute(ctx context.Context, input ConfirmRegInput, cfg *configs.AuthConfig) (ConfirmRegOutput, error) {
 	// Implement the registration confirmation logic here...
 	_, err := uc.UserRepo.FindByID(ctx, input.UserID)
 	if err != nil {
-		logg.Error("Failed to find user", "error", err)
+		uc.Logg.Error("Failed to find user", "error", err)
 		return ConfirmRegOutput{Success: false}, err
 	}
 

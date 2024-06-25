@@ -8,10 +8,14 @@ scripts_directory := $(project_root)/scripts
 deployments_directory := $(project_root)/deployments
 cmd_directory := $(project_root)/cmd
 migrations_directory := $(project_root)/migrations
+assets_directory := $(project_root)/assets
+
+# Files
+docker_compose_file := $(deployments_directory)/docker-compose.yaml
+email_template_file := $(assets_directory)/email_template.html
 
 # Commands
 deno_command := deno run --allow-read --allow-write --allow-net --allow-env
-docker_compose_file := $(deployments_directory)/docker-compose.yaml
 
 # Postgres service configuration
 postgres_host := "localhost"
@@ -61,6 +65,9 @@ migration_dir := $(migrations_directory)/auth
 account_email := jorge.testing9@gmail.com
 account_password := Jorgetesting1234
 
+smtp_host := localhost
+smtp_port := 1025
+
 define AUTH_ENVS
 export APP_NAME=$(auth_app_name) \
 HTTP_HOST=$(auth_http_host) \
@@ -70,6 +77,9 @@ MIGRATIONS_PATH=$(migration_dir) \
 PG_URL=$(auth_database_url) \
 VERSION=$(auth_version) \
 ACC_EMAIL=$(account_email) \
+EMAIL_TEMPLATE=$(email_template_file) \
+SMTP_HOST=$(smtp_host) \
+SMTP_PORT=$(smtp_port) \
 ACC_PASSWORD=$(account_password) \
 LOG_LEVEL=$(auth_log_level);
 endef

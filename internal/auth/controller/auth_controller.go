@@ -1,4 +1,4 @@
-// Package controller provides the controller layer for the authentication service.
+// Package controller implements the HTTP handlers for the authentication use cases.
 package controller
 
 import (
@@ -30,20 +30,20 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
-		c.Logger.Info("Failed to decode user input for registration - error: %s", err)
+		c.Logger.Info("Failed to decode user input for registration", "error", err)
 		return
 	}
 
-	output, err := c.UserRegUC.Execute(ctx, input, c.Logger, c.Cfg)
+	output, err := c.UserRegUC.Execute(ctx, input, c.Cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to register user", "error", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(output); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to encode response", "error", err)
 		return
 	}
@@ -58,20 +58,20 @@ func (c *AuthController) Authenticate(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
-		c.Logger.Info("Failed to decode user input for authentication - error: %s", err)
+		c.Logger.Info("Failed to decode user input for authentication", "error", err)
 		return
 	}
 
-	output, err := c.UserAuthUC.Execute(ctx, input, c.Logger)
+	output, err := c.UserAuthUC.Execute(ctx, input, c.Cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to authenticate user", "error", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(output); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to encode response", "error", err)
 		return
 	}
@@ -86,20 +86,20 @@ func (c *AuthController) ConfirmRegistration(w http.ResponseWriter, r *http.Requ
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
-		c.Logger.Info("Failed to decode user input for confirmation - error: %s", err)
+		c.Logger.Info("Failed to decode user input for confirmation", "error", err)
 		return
 	}
 
-	output, err := c.ConfirmRegUC.Execute(ctx, input, c.Logger)
+	output, err := c.ConfirmRegUC.Execute(ctx, input, c.Cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to confirm registration", "error", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(output); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		c.Logger.Error("Failed to encode response", "error", err)
 		return
 	}

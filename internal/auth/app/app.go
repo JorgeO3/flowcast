@@ -1,4 +1,4 @@
-// Package app is the entry point for the authentication service.
+// Package app implements the main entry point for the authentication service.
 package app
 
 import (
@@ -10,7 +10,7 @@ import (
 	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/controller"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/services"
+	"gitlab.com/JorgeO3/flowcast/internal/auth/service"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
@@ -18,15 +18,12 @@ import (
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
 )
 
-// Run is the main function that sets up and starts the authentication service.
-func Run(cfg *configs.AuthConfig) {
-	// Create a new instance of the logger with the log level specified in the configuration.
-	logg := logger.New(cfg.LogLevel)
-
+// Run starts the authentication service using the provided configuration and logger.
+func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 	// Establish a connection to the PostgreSQL database using the database URL provided in the configuration.
 	pg, err := postgres.New(cfg.DatabaseURL)
 	if err != nil {
-		logg.Fatal(fmt.Errorf("postgres connection error: %s", err))
+		logg.Fatal(fmt.Errorf("postgres connection error: %w", err))
 	}
 	defer pg.Close()
 
@@ -42,7 +39,7 @@ func Run(cfg *configs.AuthConfig) {
 	// Initialize the user preference repository using the PostgreSQL database connection.
 	userPrefRepo := repository.NewPostgresUserPrefRepo(pg)
 
-	// Intialize the social link repository using the PostgreSQL database connection.
+	// Initialize the social link repository using the PostgreSQL database connection.
 	socialRepo := repository.NewPostgresSocialLinkRepo(pg)
 
 	// Initialize the email verification token repository using the PostgreSQL database connection.
@@ -52,12 +49,12 @@ func Run(cfg *configs.AuthConfig) {
 	smtpCfg := smtp.NewConfig(cfg.SMTPHost, cfg.SMTPPort, cfg.AccEmail, cfg.AccPassword)
 	smtpClient := smtp.NewSMTPClient(smtpCfg)
 
-	mailer := services.NewMailerService(smtpClient)
+	mailer := service.NewMailerService(smtpClient)
 
 	// Initialize the use cases related to user authentication.
-	userRegUC := usecase.NewUserRegUC(mailer, userRepo, userPrefRepo, socialRepo, emailRepo, txManager)
-	userAuthUC := usecase.NewUserAuthUC(userRepo)
-	confirmRegUC := usecase.NewConfirmRegUC(userRepo)
+	userRegUC := usecase.NewUserRegUC(mailer, userRepo, userPrefRepo, socialRepo, emailRepo, txManager, logg)
+	userAuthUC := usecase.NewUserAuthUC(userRepo, logg)
+	confirmRegUC := usecase.NewConfirmRegUC(userRepo, logg)
 
 	// Initialize the authentication controller with the use cases and logger.
 	authController := &controller.AuthController{
@@ -72,10 +69,13 @@ func Run(cfg *configs.AuthConfig) {
 	r := chi.NewRouter()
 
 	// Set up middlewares for the router.
-	r.Use(middleware.Logger)            // Middleware to log HTTP requests.
-	r.Use(middleware.Recoverer)         // Middleware to recover from panics and send an appropriate error response.
-	r.Use(middleware.Heartbeat("/"))    // Middleware to provide a healthcheck endpoint at the root path.
-	r.Use(middleware.RequestSize(1024)) // Middleware to limit the maximum request size to 1 KB.
+	r.Use(middleware.RequestID)                 // Middleware to inject request ID into the context.
+	r.Use(middleware.RealIP)                    // Middleware to set the RemoteAddr to the IP address of the request.
+	r.Use(logger.ZerologMiddleware(logg))       // Custom middleware to log HTTP requests with zerolog.
+	r.Use(middleware.Recoverer)                 // Middleware to recover from panics and send an appropriate error response.
+	r.Use(middleware.Heartbeat("/"))            // Middleware to provide a healthcheck endpoint at the root path.
+	r.Use(middleware.RequestSize(1024))         // Middleware to limit the maximum request size to 1 KB.
+	r.Use(logger.ErrorHandlingMiddleware(logg)) // Custom middleware to handle server errors.
 
 	// Define routes and corresponding handlers for the authentication service.
 	r.Post("/register", authController.Register)
@@ -84,10 +84,10 @@ func Run(cfg *configs.AuthConfig) {
 
 	// Construct the server address using the host and port specified in the configuration.
 	addr := fmt.Sprintf("%s:%s", cfg.HTTPHost, cfg.HTTPPort)
-	fmt.Printf("Starting server on %s", addr)
+	logg.Info("Starting server on " + addr)
 
 	// Start the server and listen for incoming requests.
 	if err := http.ListenAndServe(addr, r); err != nil {
-		logg.Fatal("Failed to start server: %v", err)
+		logg.Fatal(fmt.Errorf("failed to start server: %w", err))
 	}
 }

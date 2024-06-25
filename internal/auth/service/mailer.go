@@ -1,5 +1,5 @@
 // Package services contains the utility functions for the auth module.
-package services
+package service
 
 import (
 	"gitlab.com/JorgeO3/flowcast/pkg/smtp"
