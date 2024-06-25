@@ -99,7 +99,7 @@ func (l *Logger) msg(level string, message interface{}, args ...interface{}) {
 	}
 }
 
-// ZerologMiddleware es un middleware que registra las solicitudes HTTP usando zerolog.
+// ZerologMiddleware improves the format of the log entries by adding more information about the request.
 func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +129,7 @@ func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
 	}
 }
 
-// ErrorHandlingMiddleware es un middleware que maneja errores del servidor.
+// ErrorHandlingMiddleware recovers from panics and sends an appropriate error response.
 func ErrorHandlingMiddleware(logg Interface) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

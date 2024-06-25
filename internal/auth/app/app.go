@@ -4,6 +4,7 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -75,6 +76,7 @@ func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 	r.Use(middleware.Recoverer)                 // Middleware to recover from panics and send an appropriate error response.
 	r.Use(middleware.Heartbeat("/"))            // Middleware to provide a healthcheck endpoint at the root path.
 	r.Use(middleware.RequestSize(1024))         // Middleware to limit the maximum request size to 1 KB.
+	r.Use(middleware.Timeout(60 * time.Second)) // Middleware to set a timeout of 60 seconds for each request.
 	r.Use(logger.ErrorHandlingMiddleware(logg)) // Custom middleware to handle server errors.
 
 	// Define routes and corresponding handlers for the authentication service.
