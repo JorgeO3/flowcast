@@ -58,6 +58,9 @@ auth_version := "v1.0.0"
 auth_log_level := "debug"
 migration_dir := $(migrations_directory)/auth
 
+account_email := jorge.testing9@gmail.com
+account_password := Jorgetesting1234
+
 define AUTH_ENVS
 export APP_NAME=$(auth_app_name) \
 HTTP_HOST=$(auth_http_host) \
@@ -66,7 +69,18 @@ DB_NAME=$(postgres_db_name) \
 MIGRATIONS_PATH=$(migration_dir) \
 PG_URL=$(auth_database_url) \
 VERSION=$(auth_version) \
+ACC_EMAIL=$(account_email) \
+ACC_PASSWORD=$(account_password) \
 LOG_LEVEL=$(auth_log_level);
+endef
+
+# Mailhog environments
+mailhog_smtp_port := "1025"
+mailhog_http_port := "8025"
+
+define MAIL_ENVS
+export SMTP_PORT=$(mailhog_smtp_port) \
+HTTP_PORT=$(mailhog_http_port); 
 endef
 
 # Encapsulate environment variables and Docker Compose command
@@ -75,8 +89,24 @@ $(POSTGRES_ENVS) \
 $(ADMINER_ENVS) \
 $(MINIO_ENVS) \
 $(AUTH_ENVS) \
+$(MAIL_ENVS) \
 docker-compose -f $(docker_compose_file)
 endef
+
+.PHONY: registration-request
+registration-request:
+	@echo "Starting auth registration request"
+	http POST localhost:4100/register  \
+	username=Jorge \
+	email=jorge.testing9@gmail.com \
+	password=Jorgetesting1234 \
+	fullname="Jorge Osorio" \
+	birthdate="1975-08-19T23:15:30.000Z" \
+	gender=male \
+	phone=323423423423 \
+	emailNotif:=true \
+	smsNotif:=true \
+	socialLinks:='[{"platform": "facebook", "url": "facebook.com"}, {"platform": "github", "url": "github.com"}]'
 
 .PHONY: auth-service
 auth-service:
@@ -104,7 +134,7 @@ start-services:
 # Command to rebuild all services
 .PHONY: rebuild-services
 rebuild-services:
-	@read -p "Are you sure you want to rebuild all services without cache? [Y/N] " confirm && [ $${confirm} = Y ]
+	@read -p "Are you sure you want to rebuild all services without cache? [y/N] " confirm && [ $${confirm} = y ]
 	@echo "Stopping services..."
 	@$(DOCKER_COMPOSE_CMD) down
 	@echo "Rebuilding services without cache..."
@@ -116,14 +146,14 @@ rebuild-services:
 # Command to stop a single or multiple services
 .PHONY: stop-services
 stop-services:
-	@read -p "Are you sure you want to stop these services? [Y/N] " confirm && [ $${confirm} = Y ]
+	@read -p "Are you sure you want to stop these services? [y/N] " confirm && [ $${confirm} = y ]
 	@echo "Stopping services..."
 	@$(DOCKER_COMPOSE_CMD) down $(services)
 
 # Command to stop all services
 .PHONY: stop-all-services
 stop-all-services:
-	@read -p "Are you sure you want to stop all services? [Y/N] " confirm && [ $${confirm} = Y ]
+	@read -p "Are you sure you want to stop all services? [y/N] " confirm && [ $${confirm} = y ]
 	@echo "Stopping all services..."
 	@$(DOCKER_COMPOSE_CMD) down
 	@echo "All services have been stopped."

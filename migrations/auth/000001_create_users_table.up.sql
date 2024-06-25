@@ -32,7 +32,7 @@ CREATE TABLE "users" (
   "updated_at" timestamp NOT NULL
 );
 
-CREATE TABLE "user_preference" (
+CREATE TABLE "user_preferences" (
   "id" serial PRIMARY KEY,
   "user_id" int UNIQUE NOT NULL,
   "email_notifications" bool NOT NULL,
@@ -46,6 +46,15 @@ CREATE TABLE "social_links" (
   "url" varchar(255) NOT NULL
 );
 
-ALTER TABLE "user_preference" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+CREATE TABLE "email_verification_tokens" (
+  "id" serial PRIMARY KEY,
+  "user_id" int UNIQUE NOT NULL,
+  "token" text NOT NULL,
+  "created_at" timestamp NOT NULL
+);
+
+ALTER TABLE "user_preferences" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "social_links" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+
+ALTER TABLE "email_verification_tokens" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

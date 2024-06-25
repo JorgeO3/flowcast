@@ -45,7 +45,7 @@ type User struct {
 	Birthdate  time.Time
 	Gender     UserGender
 	Phone      string
-	AuthStatus AuthStatus
+	Status     AuthStatus
 	SubsStatus SubsStatus
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -58,7 +58,7 @@ func NewUser(username, email, password string, options ...UserOption) (*User, er
 		Email:      email,
 		Password:   password,
 		SubsStatus: SubsInactive,
-		AuthStatus: AuthInactive,
+		Status:     AuthInactive,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
@@ -106,7 +106,7 @@ func WithPhone(phone string) UserOption {
 	}
 }
 
-func isValidAuthStatus(status AuthStatus) bool {
+func isValidStatus(status AuthStatus) bool {
 	switch status {
 	case AuthActive, AuthInactive, AuthLocked:
 		return true
@@ -132,7 +132,7 @@ func isValidGender(gender UserGender) bool {
 
 func (u *User) validate() error {
 	validations := map[string]func() bool{
-		"auth status":         func() bool { return isValidAuthStatus(u.AuthStatus) },
+		"auth status":         func() bool { return isValidStatus(u.Status) },
 		"subscription status": func() bool { return isValidSubsStatus(u.SubsStatus) },
 		"gender":              func() bool { return isValidGender(u.Gender) },
 	}

@@ -10,9 +10,11 @@ import (
 	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/controller"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
+	"gitlab.com/JorgeO3/flowcast/internal/auth/services"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
+	"gitlab.com/JorgeO3/flowcast/pkg/smtp"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
 )
 
@@ -40,17 +42,30 @@ func Run(cfg *configs.AuthConfig) {
 	// Initialize the user preference repository using the PostgreSQL database connection.
 	userPrefRepo := repository.NewPostgresUserPrefRepo(pg)
 
+	// Intialize the social link repository using the PostgreSQL database connection.
+	socialRepo := repository.NewPostgresSocialLinkRepo(pg)
+
+	// Initialize the email verification token repository using the PostgreSQL database connection.
+	emailRepo := repository.NewPostgresEmailVerificationTokenRepo(pg)
+
+	// Create a new SMTP client using the SMTP configuration provided in the configuration.
+	smtpCfg := smtp.NewConfig(cfg.SMTPHost, cfg.SMTPPort, cfg.AccEmail, cfg.AccPassword)
+	smtpClient := smtp.NewSMTPClient(smtpCfg)
+
+	mailer := services.NewMailerService(smtpClient)
+
 	// Initialize the use cases related to user authentication.
-	userRegUC := usecase.NewUserRegUC(userRepo, userPrefRepo, txManager)
+	userRegUC := usecase.NewUserRegUC(mailer, userRepo, userPrefRepo, socialRepo, emailRepo, txManager)
 	userAuthUC := usecase.NewUserAuthUC(userRepo)
 	confirmRegUC := usecase.NewConfirmRegUC(userRepo)
 
 	// Initialize the authentication controller with the use cases and logger.
 	authController := &controller.AuthController{
+		Cfg:          cfg,
+		Logger:       logg,
 		UserRegUC:    userRegUC,
 		UserAuthUC:   userAuthUC,
 		ConfirmRegUC: confirmRegUC,
-		Logger:       logg,
 	}
 
 	// Create a new router using the chi library.

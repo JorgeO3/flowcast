@@ -2,11 +2,15 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
+	"gitlab.com/JorgeO3/flowcast/internal/auth/services"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 	"gitlab.com/JorgeO3/flowcast/pkg/transaction"
 )
@@ -40,22 +44,35 @@ type UserRegOutput struct {
 
 // UserRegUC handles the user registration logic.
 type UserRegUC struct {
-	UserRepo  repository.UserRepo
-	PrefRepo  repository.UserPrefRepo
-	TxManager transaction.TxManager
+	Mailer     services.Mailer
+	UserRepo   repository.UserRepo
+	PrefRepo   repository.UserPrefRepo
+	SocialRepo repository.SocialLinkRepo
+	EmailRepo  repository.EmailVerificationTokenRepo
+	TxManager  transaction.TxManager
 }
 
 // NewUserRegUC creates a new instance of UserRegUC.
-func NewUserRegUC(userRepo repository.UserRepo, prefRepo repository.UserPrefRepo, txManager transaction.TxManager) *UserRegUC {
+func NewUserRegUC(
+	mailer services.Mailer,
+	userRepo repository.UserRepo,
+	prefRepo repository.UserPrefRepo,
+	socialRepo repository.SocialLinkRepo,
+	emailRepo repository.EmailVerificationTokenRepo,
+	txManager transaction.TxManager) *UserRegUC {
+
 	return &UserRegUC{
-		UserRepo:  userRepo,
-		PrefRepo:  prefRepo,
-		TxManager: txManager,
+		UserRepo:   userRepo,
+		PrefRepo:   prefRepo,
+		SocialRepo: socialRepo,
+		EmailRepo:  emailRepo,
+		TxManager:  txManager,
+		Mailer:     mailer,
 	}
 }
 
 // Execute performs the user registration.
-func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, logg logger.Interface) (UserRegOutput, error) {
+func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, logg logger.Interface, cfg *configs.AuthConfig) (UserRegOutput, error) {
 	if err := validateInput(input); err != nil {
 		logg.Info("Invalid input data for user registration", "error", err)
 		return UserRegOutput{}, err
@@ -67,14 +84,17 @@ func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, logg logge
 		return UserRegOutput{}, err
 	}
 
-	// Rollback the transaction if an error occurs in any of the following steps
+	var commit = false
+
+	// Rollback the transaction if an error occurs and commit has not been called
 	defer func() {
-		if err != nil {
+		if !commit {
 			tx.Rollback()
 			logg.Error("Transaction rolled back", "error", err)
 		}
 	}()
 
+	// Execute user creation and related operations within the transaction
 	user, err := createUserEntity(input)
 	if err != nil {
 		logg.Error("Failed to create new user entity", "error", err)
@@ -88,13 +108,44 @@ func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, logg logge
 	}
 
 	userPreference := createUserPrefEntity(input, userID)
+	if userPreference == nil {
+		logg.Error("User preference entity is nil")
+		err = fmt.Errorf("user preference entity is nil")
+		return UserRegOutput{}, err
+	}
+
 	if err := uc.PrefRepo.Save(ctx, tx, userPreference); err != nil {
 		logg.Error("Failed to save user preference to the database", "error", err)
 		return UserRegOutput{}, err
 	}
 
+	socialLinks := createSocialLinkEntities(input, userID)
+	if err := uc.SocialRepo.SaveTx(ctx, tx, socialLinks); err != nil {
+		logg.Error("Failed to save social links to the database", "error", err)
+		return UserRegOutput{}, err
+	}
+
+	emailVerificationToken, err := createEmailVerificationToken(userID)
+	if err := uc.EmailRepo.SaveTx(ctx, tx, emailVerificationToken); err != nil {
+		logg.Error("Failed to save the email verification token to the database", "error", err)
+		return UserRegOutput{}, err
+	}
+
+	// Commit the transaction if all operations are successful
 	if err := tx.Commit(); err != nil {
 		logg.Error("Failed to commit the transaction", "error", err)
+		return UserRegOutput{}, err
+	}
+	commit = true // Mark commit as successful
+
+	mailerConfig, err := createMailerConfig(cfg, user, emailVerificationToken)
+	if err != nil {
+		logg.Error("Failed to create mailer config", "error", err)
+		return UserRegOutput{}, err
+	}
+
+	if err := uc.Mailer.SendConfirmationEmail(mailerConfig); err != nil {
+		logg.Error("Failed to send confirmation email", "error", err)
 		return UserRegOutput{}, err
 	}
 
@@ -127,4 +178,39 @@ func createUserEntity(input UserRegInput) (*entity.User, error) {
 // createUserPrefEntity creates a new user preference entity from the input data.
 func createUserPrefEntity(input UserRegInput, userID int) *entity.UserPref {
 	return entity.NewUserPref(userID, input.EmailNotif, input.SMSNotif)
+}
+
+// createSocialLinkEntities creates a list of social link entities from the input data.
+func createSocialLinkEntities(input UserRegInput, userID int) []*entity.SocialLink {
+	socialLinksLen := len(input.SocialLinks)
+	socialLinks := make([]*entity.SocialLink, socialLinksLen)
+
+	for i, socialLink := range input.SocialLinks {
+		socialLinks[i] = entity.NewSocialLink(userID, socialLink.Platform, socialLink.URL)
+	}
+	return socialLinks
+}
+
+func createEmailVerificationToken(userID int) (*entity.EmailVerificationToken, error) {
+	email, err := entity.NewEmailVerificationToken(userID)
+	if err != nil {
+		return &entity.EmailVerificationToken{}, err
+	}
+	return email, nil
+}
+
+func createMailerConfig(cfg *configs.AuthConfig, user *entity.User, emailVer *entity.EmailVerificationToken) (*services.MailerConfig, error) {
+	byteHTMLTemplate, err := os.ReadFile(cfg.EmailTemplate)
+	if err != nil {
+		return &services.MailerConfig{}, err
+	}
+
+	htmlTemplate := string(byteHTMLTemplate)
+
+	data := map[string]string{
+		"UserName":        user.FullName,
+		"ConfirmationURL": emailVer.Token,
+	}
+
+	return services.NewMailerConfig(data, user.Email, htmlTemplate, "email_template"), nil
 }

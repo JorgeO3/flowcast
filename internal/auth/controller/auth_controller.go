@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
 )
@@ -17,6 +18,7 @@ type AuthController struct {
 	UserAuthUC   *usecase.UserAuthUC
 	ConfirmRegUC *usecase.ConfirmRegUC
 	Logger       logger.Interface
+	Cfg          *configs.AuthConfig
 }
 
 // Register is an HTTP handler that processes user registration requests.
@@ -32,7 +34,7 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := c.UserRegUC.Execute(ctx, input, c.Logger)
+	output, err := c.UserRegUC.Execute(ctx, input, c.Logger, c.Cfg)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		c.Logger.Error("Failed to register user", "error", err)

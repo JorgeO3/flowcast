@@ -8,8 +8,8 @@ type ProxyConfig struct {
 	AppName        string `env:"APP_NAME"`
 	Version        string `env:"VERSION"`
 	LogLevel       string `env:"LOG_LEVEL"`
-	HttpHost       string `env:"HTTP_HOST"`
-	HttpPort       string `env:"HTTP_PORT"`
+	HTTPHost       string `env:"HTTP_HOST"`
+	HTTPPort       string `env:"HTTP_PORT"`
 	GrpcBrokerHost string `env:"GRPC_BROKER_HOST"`
 	GrpcBrokerPort string `env:"GRPC_BROKER_PORT"`
 	GrpcAuthHost   string `env:"GRPC_AUTH_HOST"`

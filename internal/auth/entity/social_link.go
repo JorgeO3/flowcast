@@ -8,3 +8,12 @@ type SocialLink struct {
 	Platform string
 	URL      string
 }
+
+// NewSocialLink creates a new instance of SocialLink.
+func NewSocialLink(userID int, platform, url string) *SocialLink {
+	return &SocialLink{
+		Platform: platform,
+		URL:      url,
+		UserID:   userID,
+	}
+}

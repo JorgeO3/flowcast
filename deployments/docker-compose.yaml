@@ -1,4 +1,16 @@
 services:
+  mailhog-service:
+    image: mailhog/mailhog
+    container_name: mailhog-service
+    restart: always
+    volumes:
+      - ./data/maildir:/maildir
+    environment:
+      - MH_STORAGE=maildir
+    ports:
+      - ${SMTP_PORT}:1025
+      - ${HTTP_PORT}:8025
+
   minio-service:
     image: bitnami/minio:latest
     container_name: minio-service
@@ -13,12 +25,6 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_DEFAULT_BUCKETS=${MINIO_DEFAULT_BUCKETS}
-    # command: serve`r --console-address ":9001" /data
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-    #   interval: 30s
-    #   timeout: 20s
-    #   retries: 3
 
   postgres-service:
     image: postgres:latest
