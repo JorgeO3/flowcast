@@ -9,6 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type   {
+    
+}
+
+
 // TxManager is an interface that defines the methods to manage transactions.
 type TxManager interface {
 	Begin(ctx context.Context) (Tx, error)

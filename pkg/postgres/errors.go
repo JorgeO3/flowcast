@@ -26,6 +26,7 @@ const (
 	ErrCodeSerializationFailure      ErrorCode = "40001"
 	ErrCodeDeadlockDetected          ErrorCode = "40P01"
 	ErrCodeNotFound                  ErrorCode = "P0002" // Custom error code for resource not found
+	ErrUnknownError                  ErrorCode = "UNKNOWN"
 )
 
 // Error is a custom error type that represents a PostgreSQL error.
@@ -51,7 +52,7 @@ func NewPostgresError(pgErr *pgconn.PgError) Error {
 }
 
 // MapError maps a PostgreSQL error to a PostgresError.
-func MapError(err error) error {
+func MapError(err error) Error {
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		return NewPostgresError(pgErr)
 	}
@@ -62,5 +63,9 @@ func MapError(err error) error {
 			Message: "not found",
 		}
 	}
-	return err
+
+	return Error{
+		Code:   ErrUnknownError,
+		Detail: err.Error(),
+	}
 }

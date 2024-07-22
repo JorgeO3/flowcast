@@ -110,7 +110,7 @@ func (p *PostgresUserRepo) findUser(ctx context.Context, query string, arg inter
 	}
 
 	err := p.Pool.QueryRow(ctx, query, arg).Scan(dest...)
-	return &user, postgres.MapError(err)
+	return &user, err
 }
 
 // Save saves a user in the database.
@@ -131,7 +131,7 @@ func (p *PostgresUserRepo) Save(ctx context.Context, tx transaction.Tx, user *en
 		user.UpdatedAt,
 	}
 	err := tx.QueryRow(ctx, insertUserQuery, args...).Scan(&userID)
-	return userID, postgres.MapError(err)
+	return userID, err
 }
 
 // Update updates an existing user in the database.
@@ -151,11 +151,11 @@ func (p *PostgresUserRepo) Update(ctx context.Context, user *entity.User) error 
 		user.ID,
 	}
 	_, err := p.Pool.Exec(ctx, updateUserQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // LockUser locks a user by their ID.
 func (p *PostgresUserRepo) LockUser(ctx context.Context, id int) error {
 	_, err := p.Pool.Exec(ctx, lockUserQuery, id)
-	return postgres.MapError(err)
+	return err
 }

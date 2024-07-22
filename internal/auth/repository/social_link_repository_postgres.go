@@ -55,7 +55,7 @@ func (p *PostgresSocialLinkRepo) FindByUserID(ctx context.Context, userID int) (
 	}
 
 	err := p.Pool.QueryRow(ctx, getSocialLinksQuery, userID).Scan(dest...)
-	return &socialLink, postgres.MapError(err)
+	return &socialLink, err
 }
 
 // FindByUserIDTx retrieves a social link by user ID within a transaction.
@@ -69,7 +69,7 @@ func (p *PostgresSocialLinkRepo) FindByUserIDTx(ctx context.Context, tx transact
 	}
 
 	err := tx.QueryRow(ctx, getSocialLinksQuery, userID).Scan(dest...)
-	return &socialLink, postgres.MapError(err)
+	return &socialLink, err
 }
 
 // SaveTx saves multiple social links within a transaction.
@@ -82,7 +82,7 @@ func (p *PostgresSocialLinkRepo) SaveTx(ctx context.Context, tx transaction.Tx, 
 	insertSocialLinksQuery := fmt.Sprintf(insertSocialLinksHeaderQuery, strings.Join(valueStrings, ","))
 
 	_, err := tx.Exec(ctx, insertSocialLinksQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // Save saves multiple social links.
@@ -95,7 +95,7 @@ func (p *PostgresSocialLinkRepo) Save(ctx context.Context, socialLinks []*entity
 	insertSocialLinksQuery := fmt.Sprintf(insertSocialLinksHeaderQuery, strings.Join(valueStrings, ","))
 
 	_, err := p.Pool.Exec(ctx, insertSocialLinksQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // Update updates a social link.
@@ -107,7 +107,7 @@ func (p *PostgresSocialLinkRepo) Update(ctx context.Context, socialLink *entity.
 	}
 
 	_, err := p.Pool.Exec(ctx, updateSocialLinksQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // buildSocialLinkInsertArgs constructs the arguments and value strings for inserting social links.

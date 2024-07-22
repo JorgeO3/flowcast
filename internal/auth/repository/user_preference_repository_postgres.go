@@ -57,7 +57,7 @@ func (p *PostgresUserPrefRepo) FindByUserID(ctx context.Context, userID int) (*e
 	}
 
 	err := p.Pool.QueryRow(ctx, searchUserPrefQuery, userID).Scan(dest...)
-	return &userPref, postgres.MapError(err)
+	return &userPref, err
 }
 
 // Save saves a user preference.
@@ -69,7 +69,7 @@ func (p *PostgresUserPrefRepo) Save(ctx context.Context, tx transaction.Tx, user
 	}
 
 	_, err := tx.Exec(ctx, insertUserPrefQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // Update updates a user preference.
@@ -80,5 +80,5 @@ func (p *PostgresUserPrefRepo) Update(ctx context.Context, userPref *entity.User
 		userPref.UserID,
 	}
 	_, err := p.Pool.Exec(ctx, updateUserPrefQuery, args...)
-	return postgres.MapError(err)
+	return err
 }

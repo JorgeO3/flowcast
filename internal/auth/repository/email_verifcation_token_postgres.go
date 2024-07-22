@@ -43,7 +43,7 @@ func (p PostgresEmailVerificationTokenRepo) FindByUserID(ctx context.Context, us
 	}
 
 	err := p.Pool.QueryRow(ctx, getEmailVerificationTokenQuery, userID).Scan(dest...)
-	return &emailVerificationT, postgres.MapError(err)
+	return &emailVerificationT, err
 }
 
 // SaveTx implements EmailVerificationTokenRepo.
@@ -55,7 +55,7 @@ func (p PostgresEmailVerificationTokenRepo) SaveTx(ctx context.Context, tx trans
 	}
 
 	_, err := tx.Exec(ctx, insertEmailVerificationTokenQuery, args...)
-	return postgres.MapError(err)
+	return err
 }
 
 // NewPostgresEmailVerificationTokenRepo -.

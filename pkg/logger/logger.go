@@ -33,7 +33,7 @@ var _ Interface = (*Logger)(nil)
 func New(level string) Interface {
 	zerolog.SetGlobalLevel(parseLogLevel(level))
 
-	logger := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	// zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
 	// 	return shortenPath(file, line)
 	// }

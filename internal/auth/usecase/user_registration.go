@@ -53,33 +53,75 @@ type UserRegUC struct {
 	Logger     logger.Interface
 }
 
-// NewUserRegUC creates a new instance of UserRegUC.
-func NewUserRegUC(
-	mailer service.Mailer,
-	userRepo repository.UserRepo,
-	prefRepo repository.UserPrefRepo,
-	socialRepo repository.SocialLinkRepo,
-	emailRepo repository.EmailVerificationTokenRepo,
-	txManager transaction.TxManager,
-	logg logger.Interface) *UserRegUC {
+type UserRegUCOption func(*UserRegUC)
 
-	return &UserRegUC{
-		UserRepo:   userRepo,
-		PrefRepo:   prefRepo,
-		SocialRepo: socialRepo,
-		EmailRepo:  emailRepo,
-		TxManager:  txManager,
-		Mailer:     mailer,
-		Logger:     logg,
+// NewUserRegUC creates a new instance of UserRegUC
+func NewUserRegUC(options ...UserRegUCOption) *UserRegUC {
+	uc := &UserRegUC{}
+	for _, option := range options {
+		option(uc)
+	}
+	return uc
+}
+
+// WithMailer -.
+func WithMailer(mailer service.Mailer) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.Mailer = mailer
+	}
+}
+
+// WithUserRepo -.
+func WithUserRepo(userRepo repository.UserRepo) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.UserRepo = userRepo
+	}
+}
+
+// WithUserPrefRepo -.
+func WithUserPrefRepo(prefRepo repository.UserPrefRepo) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.PrefRepo = prefRepo
+	}
+}
+
+// WithSocialRepo -.
+func WithSocialRepo(socialRepo repository.SocialLinkRepo) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.SocialRepo = socialRepo
+	}
+}
+
+// WithEmailRepo -.
+func WithEmailRepo(emailRepo repository.EmailVerificationTokenRepo) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.EmailRepo = emailRepo
+	}
+}
+
+// WithTxManager -.
+func WithTxManager(txManager transaction.TxManager) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.TxManager = txManager
+	}
+}
+
+// WithLogger -.
+func WithLogger(logg logger.Interface) UserRegUCOption {
+	return func(uc *UserRegUC) {
+		uc.Logger = logg
 	}
 }
 
 // Execute performs the user registration.
-func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, cfg *configs.AuthConfig) (UserRegOutput, error) {
+func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, cfg *configs.AuthConfig) (UserRegOutput, *DomainError) {
 	uc.Logger.Info("Starting user registration", "input", input)
 	if err := validateInput(input); err != nil {
 		uc.Logger.Warn("Invalid input data for user registration", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: invalid input data: %w", err)
+		return UserRegOutput{}, &DomainError{
+			Type:    ErrorTypeValidation,
+			Message: "some",
+		}
 	}
 
 	tx, err := uc.TxManager.Begin(ctx)

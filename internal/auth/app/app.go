@@ -53,7 +53,15 @@ func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 	mailer := service.NewMailerService(smtpClient)
 
 	// Initialize the use cases related to user authentication.
-	userRegUC := usecase.NewUserRegUC(mailer, userRepo, userPrefRepo, socialRepo, emailRepo, txManager, logg)
+	userRegUC := usecase.NewUserRegUC(
+		usecase.WithMailer(mailer),
+		usecase.WithUserRepo(userRepo),
+		usecase.WithUserPrefRepo(userPrefRepo),
+		usecase.WithSocialRepo(socialRepo),
+		usecase.WithEmailRepo(emailRepo),
+		usecase.WithTxManager(txManager),
+		usecase.WithLogger(logg),
+	)
 	userAuthUC := usecase.NewUserAuthUC(userRepo, logg)
 	confirmRegUC := usecase.NewConfirmRegUC(userRepo, logg)
 
