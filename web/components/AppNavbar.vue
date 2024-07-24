@@ -1,42 +1,42 @@
 <script setup lang="ts">
-import { MenuIcon, XIcon } from 'lucide-vue-next';
+import NavLogo from './AppNavbar/NavLogo.vue';
+import NavMenu from './AppNavbar/NavMenu.vue';
+import { ArrowRightIcon } from 'lucide-vue-next';
 
+const { y } = useWindowScroll();
 const navOpen = useState('navOpen', () => false);
+
 const links = [
-  { name: 'Premiun', path: '/premiun' },
-  { name: 'Support', path: '/support' },
-  { name: 'Download', path: '/download' },
+  { name: 'Home', path: '/' },
+  { name: 'Blog', path: '/blog' },
+  { name: 'About', path: '/about' },
+  { name: 'Discover', path: '/discover' },
 ];
 
-const toggleNav = () => {
-  navOpen.value = !navOpen.value;
-};
-
+const toggleNav = () => { navOpen.value = !navOpen.value };
+const shrinkableClasses = computed(() => y.value ? 'border-b h-14' : 'border-b-0 h-20');
 </script>
 
 <template>
-  <header class="flex w-full h-20 items-center px-10 justify-between">
+  <header
+    class="flex w-full h-20 items-center border-b absolute z-10 top-0 px-4 md:px-10 justify-between transition-all ease-in-out duration-300"
+    :class="shrinkableClasses">
     <!-- Title and Logo -->
-    <NuxtLink class="flex items-center w-fit" to="/">
-      <NuxtImg class="mr-2" src="/logo.svg" alt="FlowCast Logo" width="30" />
-      <p class="font-bold text-2xl">FlowCast</p>
-    </NuxtLink>
+    <NavLogo />
 
-    <!-- Navigation -->
-    <nav class="flex justify-between">
+    <div class="flex gap-x-10">
+      <!-- Navigation -->
+      <NavMenu :links :isOpen="navOpen" @toggle="toggleNav" />
 
-      <!-- Menu button (Burger) -->
-      <button class="md:hidden dark:bg-secondary" @click="toggleNav" type="button">
-        <XIcon v-if="navOpen" />
-        <MenuIcon v-else />
-      </button>
-
-      <!-- Navigation links -->
-      <ul v-if="navOpen" class="flex">
-        <li v-for="link in links" :key="link.name" class="mx-2">
-          <!-- <NuxtLink :to="link.path" class="text-lg font-semibold">{{ link.name }}</NuxtLink> -->
-        </li>
-      </ul>
-    </nav>
+      <Button variant="default" to="/auth/login"
+        class="rounded-full hidden md:block font-semibold transition-colors ease-in-out">
+        <div class="flex gap-1">
+          <p> Login</p>
+          <ArrowRightIcon />
+        </div>
+      </Button>
+    </div>
   </header>
 </template>
+
+<style scoped></style>

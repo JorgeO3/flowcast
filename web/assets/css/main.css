@@ -72,10 +72,10 @@ html {
  
     --ring: 0 0% 83.1%;
 
-    --customGreen: 148, 100%, 50%;
+    --customGreen: 146, 77%, 39%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
