@@ -1,22 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-04-03',
+  compatibilityDate: "2024-04-03",
+  css: ["~/assets/css/main.css"],
   devtools: { enabled: true },
   modules: [
-    '@nuxtjs/tailwindcss',
-    'shadcn-nuxt',
-    '@nuxt/fonts',
-    '@nuxt/image',
-    '@nuxtjs/color-mode',
-    '@vueuse/nuxt',
+    "@nuxt/image",
+    "@nuxt/fonts",
+    "@vueuse/nuxt",
+    "@unocss/nuxt",
+    "@nuxt/icon",
   ],
-  css: ['@/assets/css/main.css'],
-  shadcn: {
-    prefix: '',
-    componentDir: './components/ui',
+  unocss: {
+    preflight: true,
   },
-  colorMode: {
-    classSuffix: '',
-  },
-  sourcemap: true,
 });

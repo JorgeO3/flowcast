@@ -1,42 +1,46 @@
-<script setup lang="ts">
-import NavLogo from './AppNavbar/NavLogo.vue';
-import NavMenu from './AppNavbar/NavMenu.vue';
-import { ArrowRightIcon } from 'lucide-vue-next';
+<script lang="ts" setup>
+import { } from "vue"
+import NavLogo from "./AppNavbar/NavLogo.vue";
+import NavMenu from "./AppNavbar/NavMenu.vue";
+import NavAuthLink from "./AppNavbar/NavAuthLink.vue";
 
-const { y } = useWindowScroll();
-const navOpen = useState('navOpen', () => false);
+const links = ref([
+  { name: "Home", path: "/" },
+  { name: "Discover", path: "/discover" },
+  { name: "About", path: "/about" },
+  { name: "Blog", path: "/blog" },
+]);
 
-const links = [
-  { name: 'Home', path: '/' },
-  { name: 'Blog', path: '/blog' },
-  { name: 'About', path: '/about' },
-  { name: 'Discover', path: '/discover' },
-];
 
-const toggleNav = () => { navOpen.value = !navOpen.value };
-const shrinkableClasses = computed(() => y.value ? 'border-b h-14' : 'border-b-0 h-20');
+const el = ref<HTMLElement | null>(null)
+const { x, y, isScrolling, arrivedState, directions } = useScroll(el)
+
+const headerClass = computed(() => `
+  transition-all duration-300 py-8 w-full absolute z-3 flex w-full
+  ${y.value ? "bg-white shadow-md" : ""}
+`);
+
+const increment = () => {
+  y.value = 30;
+};
 </script>
 
 <template>
-  <header
-    class="flex w-full h-20 items-center border-b absolute z-10 top-0 px-4 md:px-10 justify-between transition-all ease-in-out duration-300"
-    :class="shrinkableClasses">
-    <!-- Title and Logo -->
-    <NavLogo />
+  <header :class="headerClass">
+    <div class="container mx-auto flex justify-between items-center">
 
-    <div class="flex gap-x-10">
-      <!-- Navigation -->
-      <NavMenu :links :isOpen="navOpen" @toggle="toggleNav" />
+      <div ref="el" />
 
-      <Button variant="default" to="/auth/login"
-        class="rounded-full hidden md:block font-semibold transition-colors ease-in-out">
-        <div class="flex gap-1">
-          <p> Login</p>
-          <ArrowRightIcon />
-        </div>
-      </Button>
+      <!-- Logo -->
+      <NavLogo />
+
+      <div class="flex gap-10">
+        <!-- Navigation Menu -->
+        <NavMenu :links="links" />
+
+        <!-- Auth Buttons -->
+        <NavAuthLink to="/auth/login" />
+      </div>
     </div>
   </header>
 </template>
-
-<style scoped></style>

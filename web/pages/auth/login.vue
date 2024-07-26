@@ -1,11 +1,5 @@
+<script lang="ts" setup></script>
+
 <template>
-  <div>
-    <h1>Login</h1>
-  </div>
+  <div>Login</div>
 </template>
-
-<script lang="ts" setup>
-
-</script>
-
-<style></style>

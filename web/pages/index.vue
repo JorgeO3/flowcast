@@ -1,35 +1,38 @@
 <script lang="ts" setup>
-import { MoveUpRight } from 'lucide-vue-next';
-
-useHead({ title: 'FlowCast - Home' });
+useHead({ title: "Flowcast - Home" });
 </script>
 
 <template>
-  <main>
-    <section>
-      <div class="content-container">
-        <div class="text-wrapper">
-          <h1>
-            Discover a World
-            of Music with
-            Flowcast
+  <main class="min-h-screen overflow-y-scroll">
+
+    <section class="flex w-full justify-center items-stretch min-h-screen">
+
+      <div class="flex justify-center items-center w-1/2 p-8">
+        <div class="w-full max-w-xl space-y-8">
+          <h1 class="font-bold text-4xl md:text-5xl lg:text-6xl leading-tight">
+            Discover a World of Music with Flowcast
           </h1>
-          <h6>
+          <p class="text-sm md:text-base">
             Welcome to Flowcast, where music comes alive. Experience a universe of
-            <br />
             endless tunes, handpicked playlists, and personalized recommendations
-            <br />
             just for you.
-          </h6>
-          <NuxtLink class="download-link">
+          </p>
+          <NuxtLink to="/"
+            class="inline-flex items-center font-semibold text-sm border py-2 px-4 rounded-full transition hover:bg-primary hover:text-primary-foreground cursor-pointer">
             DOWNLOAD THE APP
-            <div class="icon-wrapper">
-              <MoveUpRight color="black" :size="28" />
-            </div>
+            <Icon name="ph:arrow-circle-up-right-fill" class="ml-1" color="black" :size="34" />
           </NuxtLink>
+          <div class="flex items-center space-x-4">
+            <NuxtImg src="/users.png" alt="Users" />
+            <div>
+              <p class="font-bold">2 million+</p>
+              <p class="text-sm">Flowcast users worldwide</p>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="visual-container">
+
+      <div class="visual-container w-1/2">
         <div class="logo-wrapper">
           <NuxtImg class="logo" src="/logo.svg" alt="Logo" width="450" />
         </div>
@@ -38,85 +41,22 @@ useHead({ title: 'FlowCast - Home' });
         </div>
       </div>
     </section>
+
+    <section class="flex min-h-screen">
+    </section>
   </main>
 </template>
 
 <style scoped>
-main {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-}
-
-section {
-  display: flex;
-  height: 100%;
-}
-
-.content-container {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 24px;
-}
-
-.text-wrapper {
-  width: 83.333333%;
-  height: 66.666667%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-}
-
-h1 {
-  font-weight: bold;
-  font-size: 4rem;
-}
-
-h6 {
-  margin-bottom: 16px;
-}
-
-.download-link {
-  font-weight: 600;
-  font-size: 0.875rem;
-  border: 1px solid white;
-  padding: 0.5rem 1.25rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease-in;
-  width: fit-content;
-}
-
-.download-link:hover {
-  background-color: var(--primary-color);
-  color: var(--primary-foreground-color);
-  cursor: pointer;
-}
-
-.icon-wrapper {
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-left: 0.5rem;
-  background-color: var(--primary);
-  border-radius: 9999px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .visual-container {
   position: relative;
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
   border-radius: 42px;
+  overflow: hidden;
 }
 
 .visual-container::before {
@@ -126,17 +66,18 @@ h6 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom right, #0D2616, #121212);
-  border-radius: 42px;
+  background: linear-gradient(to bottom right, #102c1b, #111813);
   opacity: 0.7;
   z-index: 0;
 }
 
 .logo-wrapper {
   position: relative;
-  border-radius: 42px;
-  width: fit-content;
-  /* height: auto; */
+  z-index: -1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .phone-wrapper {
@@ -144,21 +85,18 @@ h6 {
   bottom: 0;
   right: 0;
   max-width: 100%;
-  height: auto;
-  z-index: 3;
-  overflow: hidden;
+  z-index: 2;
 }
 
 .logo {
-  position: relative;
+  max-width: 100%;
+  height: auto;
   opacity: 0.9;
-  border-radius: 42px;
-  z-index: -1;
 }
 
 .phone {
-  position: relative;
+  max-width: 100%;
+  height: auto;
   transform: translateY(18%);
-  z-index: 3;
 }
 </style>

@@ -1,7 +1,5 @@
-<script lang="ts" setup></script>
-
 <template>
-  <div class="flex w-full h-screen flex-col">
+  <div class="flex flex-col h-screen antialiased">
     <AppNavbar />
     <slot />
   </div>
