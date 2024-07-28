@@ -124,7 +124,7 @@
         --destructive: hsl(0 62.8% 30.6%);
         --destructive-foreground: hsl(0 0% 98%);
       
-        --border: hsl(0 0% 14.9%);
+        --border: #262626;
         --input: hsl(0 0% 14.9%);
         --ring: hsl(0 0% 83.1%);
     }
@@ -135,4 +135,5 @@ body {
     font-size: 1rem;
     background-color: var(--background);
     color: var(--foreground);
+    --un-default-border-color: var(--border);
 }

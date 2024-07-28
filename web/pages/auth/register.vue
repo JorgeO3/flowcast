@@ -1,5 +1,10 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+
+</script>
 
 <template>
-  <div>Register</div>
+  <main>
+    <h1>Register</h1>
+    <p>Welcome to the register page</p>
+  </main>
 </template>
