@@ -78,6 +78,11 @@ const (
 
 // FindByUsername searches for a user by their username.
 func (p *PostgresUserRepo) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
+	tx := transaction.ExtractTx(ctx, p.Pool)
+	if tx != nil {
+
+	}
+
 	return p.findUser(ctx, searchUserQuery, username)
 }
 

@@ -54,13 +54,13 @@ func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 
 	// Initialize the use cases related to user authentication.
 	userRegUC := usecase.NewUserRegUC(
+		usecase.WithLogger(logg),
 		usecase.WithMailer(mailer),
 		usecase.WithUserRepo(userRepo),
-		usecase.WithUserPrefRepo(userPrefRepo),
-		usecase.WithSocialRepo(socialRepo),
 		usecase.WithEmailRepo(emailRepo),
 		usecase.WithTxManager(txManager),
-		usecase.WithLogger(logg),
+		usecase.WithSocialRepo(socialRepo),
+		usecase.WithUserPrefRepo(userPrefRepo),
 	)
 	userAuthUC := usecase.NewUserAuthUC(userRepo, logg)
 	confirmRegUC := usecase.NewConfirmRegUC(userRepo, logg)

@@ -15,7 +15,7 @@ docker_compose_file := $(deployments_directory)/docker-compose.yaml
 email_template_file := $(assets_directory)/email_template.html
 
 # Commands
-deno_command := deno run --allow-read --allow-write --allow-net --allow-env
+python_command := "python"
 
 # Postgres service configuration
 postgres_host := "localhost"
@@ -129,9 +129,7 @@ auth-service:
 download-songs:
 	@echo "Starting song download script..."
 	@SONGS_DIR=$(songs_directory) \
-	WEB_ENDPOINT=https://mp3teca.co \
-	SERVER_ENDPOINT=https://severmp3teca.xyz/-/mp3 \
-	$(deno_command) $(scripts_directory)/download-music.ts
+	$(python_command) $(scripts_directory)/download_music.py
 	@echo "Song download script completed."
 
 # Command to bring up services

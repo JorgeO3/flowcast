@@ -9,6 +9,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/JorgeO3/flowcast/configs"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
+	ae "gitlab.com/JorgeO3/flowcast/internal/auth/errors"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
 	"gitlab.com/JorgeO3/flowcast/internal/auth/service"
 	"gitlab.com/JorgeO3/flowcast/pkg/logger"
@@ -114,98 +115,118 @@ func WithLogger(logg logger.Interface) UserRegUCOption {
 }
 
 // Execute performs the user registration.
-func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, cfg *configs.AuthConfig) (UserRegOutput, *DomainError) {
+func (uc *UserRegUC) Execute(ctx context.Context, input UserRegInput, cfg *configs.AuthConfig) (UserRegOutput, ae.AuthError) {
 	uc.Logger.Info("Starting user registration", "input", input)
+
 	if err := validateInput(input); err != nil {
 		uc.Logger.Warn("Invalid input data for user registration", "error", err)
-		return UserRegOutput{}, &DomainError{
-			Type:    ErrorTypeValidation,
-			Message: "some",
+		return UserRegOutput{}, ae.NewBadRequest("", err)
+	}
+
+	err := uc.TxManager.Transaction(ctx, func(ctx context.Context) error {
+		userPreference := createUserPrefEntity(input, userID)
+		if userPreference == nil {
+			uc.Logger.Error("User preference entity is nil")
+			return UserRegOutput{}, ae.NewBadRequest("")
 		}
-	}
 
-	tx, err := uc.TxManager.Begin(ctx)
-	if err != nil {
-		uc.Logger.Error("Failed to start a new transaction", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to start a new transaction: %w", err)
-	}
-
-	var commit = false
-
-	defer func() {
-		if !commit {
-			_ = tx.Rollback()
-			uc.Logger.Error("Transaction rolled back")
+		if err := uc.PrefRepo.Save(ctx, tx, userPreference); err != nil {
+			uc.Logger.Error("Failed to save user preference to the database", "error", err)
+			return UserRegOutput{}, fmt.Errorf("usecase: failed to save user preference to the database: %w", err)
 		}
-	}()
+	})
 
-	user, err := createUserEntity(input)
-	if err != nil {
-		uc.Logger.Error("Failed to create new user entity", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to create new user entity: %w", err)
-	}
+	// tx, err := uc.TxManager.Begin(ctx)
+	// if err != nil {
+	// 	uc.Logger.Error("Failed to start a new transaction", "error", err)
+	// 	// return UserRegOutput{}, fmt.Errorf("usecase: failed to start a new transaction: %w", err)
+	// 	return UserRegOutput{}, &DomainError{
+	// 		Type: ErrorTypeInternal,
+	// 	}
+	// }
 
-	uc.Logger.Debug("Saving user to the database")
-	userID, err := uc.UserRepo.Save(ctx, tx, user)
-	if err != nil {
-		uc.Logger.Error("Failed to save user to the database", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to save user to the database: %w", err)
-	}
+	// var commit = false
 
-	userPreference := createUserPrefEntity(input, userID)
-	if userPreference == nil {
-		uc.Logger.Error("User preference entity is nil")
-		return UserRegOutput{}, fmt.Errorf("usecase: user preference entity is nil")
-	}
+	// defer func() {
+	// 	if !commit {
+	// 		_ = tx.Rollback()
+	// 		uc.Logger.Error("Transaction rolled back")
+	// 	}
+	// }()
 
-	uc.Logger.Debug("Saving user preference to the database")
-	if err := uc.PrefRepo.Save(ctx, tx, userPreference); err != nil {
-		uc.Logger.Error("Failed to save user preference to the database", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to save user preference to the database: %w", err)
-	}
+	// user, err := createUserEntity(input)
+	// if err != nil {
+	// 	uc.Logger.Error("Failed to create new user entity", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to create new user entity: %w", err)
+	// }
 
-	socialLinks := createSocialLinkEntities(input, userID)
-	uc.Logger.Debug("Saving social links to the database")
-	if err := uc.SocialRepo.SaveTx(ctx, tx, socialLinks); err != nil {
-		uc.Logger.Error("Failed to save social links to the database", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to save social links to the database: %w", err)
-	}
+	// uc.Logger.Debug("Saving user to the database")
+	// userID, err := uc.UserRepo.Save(ctx, tx, user)
+	// if err != nil {
+	// 	uc.Logger.Error("Failed to save user to the database", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to save user to the database: %w", err)
+	// }
 
-	emailVerificationToken, err := createEmailVerificationToken(userID)
-	if err != nil {
-		uc.Logger.Error("Failed to create email verification token", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to create email verification token: %w", err)
-	}
+	// userPreference := createUserPrefEntity(input, userID)
+	// if userPreference == nil {
+	// 	uc.Logger.Error("User preference entity is nil")
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: user preference entity is nil")
+	// }
 
-	uc.Logger.Debug("Saving email verification token to the database")
-	if err := uc.EmailRepo.SaveTx(ctx, tx, emailVerificationToken); err != nil {
-		uc.Logger.Error("Failed to save the email verification token to the database", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to save the email verification token to the database: %w", err)
-	}
+	// uc.Logger.Debug("Saving user preference to the database")
+	// if err := uc.PrefRepo.Save(ctx, tx, userPreference); err != nil {
+	// 	uc.Logger.Error("Failed to save user preference to the database", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to save user preference to the database: %w", err)
+	// }
 
-	if err := tx.Commit(); err != nil {
-		uc.Logger.Error("Failed to commit the transaction", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to commit the transaction: %w", err)
-	}
-	commit = true
+	// socialLinks := createSocialLinkEntities(input, userID)
+	// uc.Logger.Debug("Saving social links to the database")
+	// if err := uc.SocialRepo.SaveTx(ctx, tx, socialLinks); err != nil {
+	// 	uc.Logger.Error("Failed to save social links to the database", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to save social links to the database: %w", err)
+	// }
 
-	uc.Logger.Info("User registration successful, sending confirmation email")
-	mailerConfig, err := createMailerConfig(cfg, user, emailVerificationToken)
-	if err != nil {
-		uc.Logger.Error("Failed to create mailer config", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to create mailer config: %w", err)
-	}
+	// emailVerificationToken, err := createEmailVerificationToken(userID)
+	// if err != nil {
+	// 	uc.Logger.Error("Failed to create email verification token", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to create email verification token: %w", err)
+	// }
 
-	if err := uc.Mailer.SendConfirmationEmail(mailerConfig); err != nil {
-		uc.Logger.Error("Failed to send confirmation email", "error", err)
-		return UserRegOutput{}, fmt.Errorf("usecase: failed to send confirmation email: %w", err)
-	}
+	// uc.Logger.Debug("Saving email verification token to the database")
+	// if err := uc.EmailRepo.SaveTx(ctx, tx, emailVerificationToken); err != nil {
+	// 	uc.Logger.Error("Failed to save the email verification token to the database", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to save the email verification token to the database: %w", err)
+	// }
+
+	// if err := tx.Commit(); err != nil {
+	// 	uc.Logger.Error("Failed to commit the transaction", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to commit the transaction: %w", err)
+	// }
+	// commit = true
+
+	// uc.Logger.Info("User registration successful, sending confirmation email")
+	// mailerConfig, err := createMailerConfig(cfg, user, emailVerificationToken)
+	// if err != nil {
+	// 	uc.Logger.Error("Failed to create mailer config", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to create mailer config: %w", err)
+	// }
+
+	// if err := uc.Mailer.SendConfirmationEmail(mailerConfig); err != nil {
+	// 	uc.Logger.Error("Failed to send confirmation email", "error", err)
+	// 	return UserRegOutput{}, fmt.Errorf("usecase: failed to send confirmation email: %w", err)
+	// }
+
+	// return UserRegOutput{
+	// 	ID:       userID,
+	// 	Username: user.Username,
+	// 	Email:    user.Email,
+	// }, nil
 
 	return UserRegOutput{
-		ID:       userID,
-		Username: user.Username,
-		Email:    user.Email,
-	}, nil
+		ID:       1,
+		Username: "",
+		Email:    "",
+	}, err
 }
 
 func validateInput(input UserRegInput) error {

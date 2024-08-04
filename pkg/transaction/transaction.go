@@ -7,16 +7,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"gitlab.com/JorgeO3/flowcast/internal/auth/errors"
 )
-
-type   {
-    
-}
-
 
 // TxManager is an interface that defines the methods to manage transactions.
 type TxManager interface {
 	Begin(ctx context.Context) (Tx, error)
+	Transaction(ctx context.Context, f func(context.Context) errors.AuthError) errors.AuthError
 }
 
 // Tx is an interface that defines the methods to manage a transaction.
@@ -39,12 +36,43 @@ func NewPgxTxManager(pool *pgxpool.Pool) *PgxTxManager {
 }
 
 // Begin starts a new transaction.
-func (tm *PgxTxManager) Begin(ctx context.Context) (Tx, error) {
-	tx, err := tm.Pool.Begin(ctx)
+func (p *PgxTxManager) Begin(ctx context.Context) (pgx.Tx, error) {
+	tx, err := p.Pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return &PgxTx{Tx: tx}, nil
+}
+
+type txKey struct{}
+
+// injectTx injects transaction to context
+func InjectTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, txKey{}, tx)
+}
+
+// extractTx extracts transaction from context
+func ExtractTx(ctx context.Context, pool *pgxpool.Pool) pgx.Tx {
+	if tx, ok := ctx.Value(txKey{}).(Tx); ok {
+		return tx.
+	}
+	return pool
+}
+
+func (p *PgxTxManager) Transaction(ctx context.Context, f func(context.Context) error) error {
+	tx, err := p.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = f(InjectTx(ctx, tx))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // PgxTx is the implementation of the Tx interface for the Pgx driver.

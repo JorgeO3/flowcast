@@ -2,8 +2,6 @@ package usecase
 
 import (
 	"net/http"
-
-	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
 )
 
 type ErrorType int
@@ -15,21 +13,11 @@ const (
 	ErrorTypeInternal
 )
 
-// ErrorType -.
-func Hola(err error) ErrorType {
-	switch err.(type) {
-	case postgres.Error:
-		return ErrorTypeConflict
-	default:
-		return ErrorTypeInternal
-	}
-}
-
+// DomainError -.
 type DomainError struct {
 	Type    ErrorType
 	Message string
 	Err     error
-	Code    int
 }
 
 // NewDomainError -.
@@ -47,8 +35,8 @@ func (e DomainError) Unwrap() error {
 	return e.Err
 }
 
-// HttpStatusCode -.
-func (e DomainError) HttpStatusCode() int {
+// HTTPStatusCode -.
+func (e DomainError) HTTPStatusCode() int {
 	switch e.Type {
 	case ErrorTypeValidation:
 		return http.StatusBadRequest
@@ -58,5 +46,19 @@ func (e DomainError) HttpStatusCode() int {
 		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+// HTTPStatusText -.
+func (e DomainError) HTTPStatusText() string {
+	switch e.Type {
+	case ErrorTypeValidation:
+		return http.StatusText(http.StatusBadRequest)
+	case ErrorTypeNotFound:
+		return http.StatusText(http.StatusNotFound)
+	case ErrorTypeConflict:
+		return http.StatusText(http.StatusConflict)
+	default:
+		return http.StatusText(http.StatusInternalServerError)
 	}
 }

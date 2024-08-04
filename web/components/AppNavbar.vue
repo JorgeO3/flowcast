@@ -3,7 +3,7 @@ import NavLogo from "./AppNavbar/NavLogo.vue";
 import NavMenu from "./AppNavbar/NavMenu.vue";
 import NavAuthLink from "./AppNavbar/NavAuthLink.vue";
 
-const links = ref([
+const navLinks = ref([
   { name: "Home", path: "/" },
   { name: "Discover", path: "/discover" },
   { name: "About", path: "/about" },
@@ -12,23 +12,23 @@ const links = ref([
 
 const { y } = useScroll();
 
-const headerClass = computed(() => `
-  transition-all duration-300 w-full flex w-full absolute z-3 
-  sticky top-0 ${y.value ? "bg-background py-4 border-b" : "py-8"}
-`);
+const HEADER_CLASSES = {
+  base: "transition-all duration-300 w-full flex fixed z-10 top-0 bg-transparent",
+  expanded: "py-8",
+  shrunk: "py-2 border-b backdrop-blur bg-background/95 supports-[backdrop-filter]:bg-background/60"
+};
+
+const headerClasses = computed(() =>
+  `${HEADER_CLASSES.base} ${y.value ? HEADER_CLASSES.shrunk : HEADER_CLASSES.expanded}`
+);
 </script>
 
 <template>
-  <header :class="headerClass">
+  <header :class="headerClasses">
     <div class="container mx-auto flex justify-between items-center">
-      <!-- Logo -->
       <NavLogo />
-
-      <div class="flex gap-10">
-        <!-- Navigation Menu -->
-        <NavMenu :links="links" />
-
-        <!-- Auth Buttons -->
+      <div class="flex gap-10 items-center">
+        <NavMenu :links="navLinks" />
         <NavAuthLink to="/auth/login" />
       </div>
     </div>

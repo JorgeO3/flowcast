@@ -1,22 +1,27 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: "2024-04-03",
-  devtools: {
-    enabled: true,
-
-    timeline: {
-      enabled: true,
-    },
-  },
+  compatibilityDate: '2024-04-03',
   css: ["~/assets/css/main.css"],
-  modules: ["@nuxt/image", "@unocss/nuxt", "@nuxt/icon", "@nuxt/fonts"],
-  experimental: {
-    componentIslands: true,
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "shadcn-nuxt",
+    "@nuxtjs/color-mode",
+    "@nuxt/fonts",
+    "@nuxt/image",
+  ],
+  fonts: {
+    // TODO: Optimize fonts with fontsquirrel [https://www.fontsquirrel.com/tools/webfont-generator]
+    families: [{ name: 'Inter', provider: 'google', weights: [400, 700, 800], styles: ['normal'] }],
   },
-  unocss: {
-    preflight: true,
+  shadcn: {
+    prefix: '',
+    componentDir: './components/ui'
   },
-  routeRules: {
-    "/": { prerender: true },
+  colorMode: {
+    classSuffix: ''
   },
-});
+
+  image: {
+    format: ['avif'],
+    quality: 80,
+  }
+})

@@ -36,8 +36,8 @@ func (c *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 
 	output, err := c.UserRegUC.Execute(ctx, input, c.Cfg)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		c.Logger.Error("Failed to register user", "error", err)
+		http.Error(w, err.Message(), err.Code())
+		c.Logger.Error("Failed to register user", "error", err.Unwrap())
 		return
 	}
 
