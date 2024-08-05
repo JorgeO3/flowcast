@@ -4,6 +4,7 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
+// ProxyConfig holds the configuration for the proxy service.
 type ProxyConfig struct {
 	AppName        string `env:"APP_NAME"`
 	Version        string `env:"VERSION"`
@@ -16,6 +17,7 @@ type ProxyConfig struct {
 	GrpcAuthPort   string `env:"GRPC_AUTH_PORT"`
 }
 
+// LoadProxyConfig loads the configuration for the proxy service.
 func LoadProxyConfig() (*ProxyConfig, error) {
 	cfg := &ProxyConfig{}
 	if err := env.Parse(&cfg); err != nil {
