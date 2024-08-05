@@ -1,4 +1,4 @@
-// Package services contains the utility functions for the auth module.
+// Package service contains the utility functions for the auth module.
 package service
 
 import (
