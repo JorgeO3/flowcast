@@ -170,6 +170,7 @@ func (uc *UserRegistrationUseCase) Execute(ctx context.Context, input UserRegist
 		return nil, err
 	}
 
+	// Check if user is nil after transaction avoids nil pointer dereference
 	if user == nil {
 		uc.Logger.Error("User is nil after transaction")
 		return nil, errors.NewInternal("failed to create user", nil)
