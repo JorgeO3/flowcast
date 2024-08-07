@@ -1,5 +1,7 @@
 package app
 
-func init() {
+import "github.com/asaskevich/govalidator"
 
+func init() {
+	govalidator.SetFieldsRequiredByDefault(true)
 }
