@@ -1,4 +1,4 @@
-// Package configs contains the configuration for the auth service.
+// Package configs contains the configuration for the application.
 package configs
 
 import "github.com/caarlos0/env/v11"
