@@ -1,0 +1,95 @@
+@startuml
+title ♫ Flowcast: Catalog DB
+
+' hide the spot
+' hide circle
+
+' avoid problems with angled crows feet
+' skinparam linetype ortho
+
+entity Act {
+  * id : ObjectId
+  --
+  name : String
+  act_type : String
+  biography : String
+  formation_date : Date
+  disband_date : Date
+  profile_picture_url : String
+  genres : Array<Genre>
+  albums : Array<Album>
+  members : Array<Member>
+}
+
+object Genre {
+  name String
+  description String
+}
+
+entity Album {
+  * id : ObjectId
+  --
+  title : String
+  artist_id : ObjectId
+  release_date : Date
+  genre : Genre
+  cover_art_url : String
+  total_tracks : Int
+  songs : Array<Song>
+}
+
+object Member {
+  name : String
+  biography : String
+  birth_date : Date
+  profile_picture_url : Date
+  start_date : Date
+  end_date : Date
+}
+
+
+entity Song {
+  * id : ObjectId
+  --
+	title: String
+	artistid : Int
+	albumid : Int
+	audiofeatures : Object<AudioFeatures>
+	genre : song_genre
+	releasedate : Date
+	duration : Int
+	tracknumber : Int
+	lyrics : String
+	explicit : Bool
+	bitrates : Array<AudioBitrate>
+}
+
+
+object AudioFeatures {
+	tempo : Int
+	audiokey : String
+	mode : Int
+	loudness : Float
+	energy : Float
+	danceability : Float
+	speechiness : Float
+	acousticness : Float
+	instrumentalness : Float
+	liveness : Float
+	valance : Float
+}
+
+object AudioBitrate {
+  bitrate : Int
+  audio_url : String
+}
+
+Act ||--o{ Genre
+Act ||--o{ Album
+Act ||--o{ Member
+Album ||--o{ Genre
+Album ||--o{ Song
+Song ||--|{ AudioBitrate
+Song ||--|{ AudioFeatures
+
+@enduml

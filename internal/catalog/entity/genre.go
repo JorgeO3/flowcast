@@ -1,6 +1,6 @@
 package entity
 
-// Genre represent a genre entity
+// Genre represent a value object
 type Genre struct {
 	ID          int
 	Name        string

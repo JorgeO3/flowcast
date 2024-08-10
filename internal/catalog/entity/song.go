@@ -15,7 +15,7 @@ type Song struct {
 	TrackNumber   int
 	Lyrics        string
 	Explicit      bool
-	Bitrates      []SongBitrate
+	Bitrates      []AudioBitrate
 }
 
 // SongOption represent the functional options for the song entity
@@ -99,7 +99,7 @@ func WithSongExplicit(explicit bool) SongOption {
 }
 
 // WithSongBitrates set the bitrates of the song
-func WithSongBitrates(bitrates []SongBitrate) SongOption {
+func WithSongBitrates(bitrates []AudioBitrate) SongOption {
 	return func(s *Song) {
 		s.Bitrates = bitrates
 	}

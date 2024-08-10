@@ -1,49 +1,33 @@
 package entity
 
-// SongBitrate represent the bitrate of a song
-type SongBitrate struct {
-	ID       int
-	SongID   int
+// AudioBitrate is a value object that represent the bitrate of a song
+type AudioBitrate struct {
 	Bitrate  int
 	AudioURL string
 }
 
-// SongBitrateOption represent the functional options for the song bitrate entity
-type SongBitrateOption func(*SongBitrate)
+// AudioBitrateOption represent the functional options for the song bitrate entity
+type AudioBitrateOption func(*AudioBitrate)
 
-// WithSongBitrateID set the ID of the song bitrate
-func WithSongBitrateID(id int) SongBitrateOption {
-	return func(sb *SongBitrate) {
-		sb.ID = id
-	}
-}
-
-// WithSongBitrateSongID set the song ID of the song bitrate
-func WithSongBitrateSongID(songID int) SongBitrateOption {
-	return func(sb *SongBitrate) {
-		sb.SongID = songID
-	}
-}
-
-// WithSongBitrateBitrate set the bitrate of the song bitrate
-func WithSongBitrateBitrate(bitrate int) SongBitrateOption {
-	return func(sb *SongBitrate) {
+// WithAudioBitrateBitrate set the bitrate of the song bitrate
+func WithAudioBitrateBitrate(bitrate int) AudioBitrateOption {
+	return func(sb *AudioBitrate) {
 		sb.Bitrate = bitrate
 	}
 }
 
-// WithSongBitrateAudioURL set the audio URL of the song bitrate
-func WithSongBitrateAudioURL(audioURL string) SongBitrateOption {
-	return func(sb *SongBitrate) {
+// WithAudioBitrateAudioURL set the audio URL of the song bitrate
+func WithAudioBitrateAudioURL(audioURL string) AudioBitrateOption {
+	return func(sb *AudioBitrate) {
 		sb.AudioURL = audioURL
 	}
 }
 
-// NewSongBitrate create a new song bitrate entity
-func NewSongBitrate(opts ...SongBitrateOption) *SongBitrate {
-	songBitrate := &SongBitrate{}
+// NewAudioBitrate create a new song bitrate entity
+func NewAudioBitrate(opts ...AudioBitrateOption) *AudioBitrate {
+	AudioBitrate := &AudioBitrate{}
 	for _, opt := range opts {
-		opt(songBitrate)
+		opt(AudioBitrate)
 	}
-	return songBitrate
+	return AudioBitrate
 }
