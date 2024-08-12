@@ -7,7 +7,6 @@ export default defineNuxtConfig({
     "@nuxtjs/color-mode",
     "@nuxt/fonts",
     "@nuxt/image",
-    "nuxt-delay-hydration"
   ],
   fonts: {
     // TODO: Optimize fonts with fontsquirrel [https://www.fontsquirrel.com/tools/webfont-generator]
@@ -24,8 +23,4 @@ export default defineNuxtConfig({
     format: ['avif'],
     quality: 80,
   },
-  // delayHydration: {
-  //   mode: 'init',
-  //   debug: process.env.NODE_ENV === 'development'
-  // }
 })
