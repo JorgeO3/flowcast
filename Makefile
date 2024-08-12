@@ -17,53 +17,19 @@ email_template_file := $(assets_directory)/email_template.html
 # Commands
 python_command := "python"
 
-# Postgres service configuration
-postgres_host := "localhost"
-postgres_port := 5432
-postgres_user := "jorge123"
-postgres_password := "jorge123"
-postgres_db_name := "auth_service"
-
-define POSTGRES_ENVS
-export POSTGRES_PORT=$(postgres_port) \
-POSTGRES_USER=$(postgres_user) \
-POSTGRES_PASSWORD=$(postgres_password) \
-POSTGRES_DB=$(postgres_db_name);
-endef
-
-# Adminer service configuration
-adminer_port := 8080
-
-define ADMINER_ENVS
-export ADMINER_PORT=$(adminer_port);
-endef
-
-# Minio service configuration
-minio_web_port := 9000
-minio_api_port := 9001
-minio_root_user := jorge123
-minio_root_password := jorge123
-minio_buckets := music-uploads,music-processed
-
-define MINIO_ENVS
-export MINIO_WEB_PORT=$(minio_web_port) \
-MINIO_API_PORT=$(minio_api_port) \
-MINIO_ROOT_USER=$(minio_root_user) \
-MINIO_ROOT_PASSWORD=$(minio_root_password) \
-MINIO_DEFAULT_BUCKETS=$(minio_buckets);
-endef
-
-# Auth service configuration
+# *** Authentication ***
+# Authentication service 
 auth_app_name := "auth-service"
 auth_http_host := "0.0.0.0"
 auth_http_port := "4100"
-auth_database_url := "postgresql://$(postgres_user):$(postgres_password)@$(postgres_host):5432/$(postgres_db_name)?sslmode=disable"
-auth_version := "v1.0.0"
+auth_db_url := \
+  "postgresql://$(auth_postgres_user):$(auth_postgres_password)" \
+  "@$(auth_postgres_host):5432/$(auth_postgres_db_name)?sslmode=disable"auth_version := "v1.0.0"
 auth_log_level := "debug"
-migration_dir := $(migrations_directory)/auth
+auth_migration_dir := $(migrations_directory)/auth
 
-account_email := jorge.testing9@gmail.com
-account_password := Jorgetesting1234
+auth_account_email := jorge.testing9@gmail.com
+auth_account_password := Jorgetesting1234
 
 smtp_host := localhost
 smtp_port := 1025
@@ -72,35 +38,109 @@ define AUTH_ENVS
 export APP_NAME=$(auth_app_name) \
 HTTP_HOST=$(auth_http_host) \
 HTTP_PORT=$(auth_http_port) \
-DB_NAME=$(postgres_db_name) \
-MIGRATIONS_PATH=$(migration_dir) \
+DB_NAME=$(auth_postgres_db_name) \
 PG_URL=$(auth_database_url) \
 VERSION=$(auth_version) \
+LOG_LEVEL=$(auth_log_level) \
+MIGRATIONS_PATH=$(auth_migration_dir) \
 ACC_EMAIL=$(account_email) \
-EMAIL_TEMPLATE=$(email_template_file) \
+ACC_PASSWORD=$(account_password) \
 SMTP_HOST=$(smtp_host) \
 SMTP_PORT=$(smtp_port) \
-ACC_PASSWORD=$(account_password) \
-LOG_LEVEL=$(auth_log_level);
+EMAIL_TEMPLATE=$(email_template_file);
 endef
 
-# Mailhog environments
+# Authentication storage service
+auth_storage_host := "localhost"
+auth_storage_port := 5432
+auth_storage_user := "jorge123"
+auth_storage_password := "jorge123"
+auth_storage_db_name := "auth_service"
+
+define AUTH_STORAGE_ENVS
+export AUTH_STORAGE_PORT=$(auth_postgres_port) \
+AUTH_STORAGE_USER=$(auth_postgres_user) \
+AUTH_STORAGE_PASSWORD=$(auth_postgres_password) \
+AUTH_STORAGE_DB=$(auth_postgres_db_name);
+endef
+
+# Authentication storage admin service
+auth_storage_admin_port := 8080
+
+define AUTH_STORAGE_ADMIN_ENVS
+export AUTH_STORAGE_ADMIN_PORT=$(auth_storage_admin_port);
+endef
+
+# Mail service
 mailhog_smtp_port := "1025"
 mailhog_http_port := "8025"
 
-define MAIL_ENVS
-export SMTP_PORT=$(mailhog_smtp_port) \
-HTTP_PORT=$(mailhog_http_port); 
+define MAILHOG_ENVS
+export MAILHOG_SMTP_PORT=$(mailhog_service_smtp_port) \
+MAILHOG_HTTP_PORT=$(mailhog_service_http_port); 
+endef
+
+# *** Catalog ***
+# Catalog service
+
+# Catalog storage service
+catalog_storage_port := 27017
+catalog_storage_root_user := "mongo_user"
+catalog_storage_root_password := "mongo_password"
+catalog_storage_server = "catalog-storage-service"
+
+define CATALOG_STORAGE_ENVS
+export CATALOG_STORAGE_PORT=$(catalog_storage_port) \
+CATALOG_STORAGE_ROOT_USER=$(catalog_storage_root_user) \
+CATALOG_STORAGE_ROOT_PASSWORD=$(catalog_storage_root_password);
+endef
+
+# Catalog storage admin service
+catalog_storage_admin_port := 8081
+catalog_storage_admin_user := $(catalog_storage_root_user)
+catalog_storage_admin_password := $(catalog_storage_root_password)
+catalog_storage_admin_url := \
+  "mongodb://$(catalog_storage_root_user):$(catalog_storage_root_password)" \
+  "@$(catalog_storage_server):27017/"
+catalog_storage_admin_basicauth := false
+
+define CATALOG_STORAGE_ADMIN_ENVS
+export CATALOG_STORAGE_ADMIN_PORT=$(catalog_storage_admin_port) \
+CATALOG_STORAGE_ADMIN_USER=$(catalog_storage_admin_user) \
+CATALOG_STORAGE_ADMIN_PASSWORD=$(catalog_storage_admin_password) \
+CATALOG_STORAGE_ADMIN_URL=$(catalog_storage_admin_url) \
+CATALOG_STORAGE_ADMIN_BASICAUTH=$(catalog_storage_admin_basicauth);
+endef
+
+
+# *** Song ***
+# Song service
+
+# Song storage service configuration
+song_storage_web_port := 9000
+song_storage_api_port := 9001
+song_storage_root_user := jorge123
+song_storage_root_password := jorge123
+song_storage_buckets := music-uploads,music-processed
+
+define SONG_STORAGE_ENVS
+export SONG_STORAGE_WEB_PORT=$(song_storage_web_port) \
+SONG_STORAGE_API_PORT=$(song_storage_api_port) \
+SONG_STORAGE_ROOT_USER=$(song_storage_root_user) \
+SONG_STORAGE_ROOT_PASSWORD=$(song_storage_root_password) \
+SONG_STORAGE_DEFAULT_BUCKETS=$(song_storage_buckets);
 endef
 
 # Encapsulate environment variables and Docker Compose command
 define DOCKER_COMPOSE_CMD
-$(POSTGRES_ENVS) \
-$(ADMINER_ENVS) \
-$(MINIO_ENVS) \
 $(AUTH_ENVS) \
-$(MAIL_ENVS) \
-docker-compose -f $(docker_compose_file)
+$(AUTH_STORAGE_ENVS) \
+$(AUTH_STORAGE_ADMIN_ENVS) \
+$(MAILHOG_ENVS) \
+$(CATALOG_STORAGE_ENVS) \
+$(CATALOG_STORAGE_ADMIN_ENVS) \
+$(SONG_STORAGE_ENVS) \
+docker compose -f $(docker_compose_file)
 endef
 
 .PHONY: registration-request
