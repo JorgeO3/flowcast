@@ -4,18 +4,18 @@ import "time"
 
 // Song represent a song entity
 type Song struct {
-	ID            int
-	Title         string
-	ArtistID      int
-	AlbumID       int
-	AudioFeatures AudioFeatures
-	Genre         Genre
-	ReleaseDate   time.Time
-	Duration      int
-	TrackNumber   int
-	Lyrics        string
-	Explicit      bool
-	Bitrates      []AudioBitrate
+	ID            int            `bson:"_id"`
+	Title         string         `bson:"title,omitempty"`
+	ArtistID      int            `bson:"artist_id,omitempty"`
+	AlbumID       int            `bson:"album_id,omitempty"`
+	AudioFeatures AudioFeatures  `bson:"audio_features,omitempty"`
+	Genre         Genre          `bson:"genre,omitempty"`
+	ReleaseDate   time.Time      `bson:"release_date,omitempty"`
+	Duration      int            `bson:"duration,omitempty"`
+	TrackNumber   int            `bson:"track_number,omitempty"`
+	Lyrics        string         `bson:"lyrics,omitempty"`
+	Explicit      bool           `bson:"explicit,omitempty"`
+	Bitrates      []AudioBitrate `bson:"bitrates,omitempty"`
 }
 
 // SongOption represent the functional options for the song entity

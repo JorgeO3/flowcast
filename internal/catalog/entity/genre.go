@@ -2,8 +2,8 @@ package entity
 
 // Genre represent a value object
 type Genre struct {
-	Name        string
-	Description string
+	Name        string `bson:"name,omitempty"`
+	Description string `bson:"description,omitempty"`
 }
 
 // GenreOption represent the functional options for the genre entity

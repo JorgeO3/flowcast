@@ -2,37 +2,21 @@ package entity
 
 // AudioFeatures represent the audio features of a song
 type AudioFeatures struct {
-	ID               int
-	SongID           int
-	Tempo            int
-	AudioKey         string
-	Mode             int
-	Loudness         float64
-	Energy           float64
-	Danceability     float64
-	Speechiness      float64
-	Acousticness     float64
-	Instrumentalness float64
-	Liveness         float64
-	Valance          float64
+	Tempo            int     `bson:"tempo,omitempty"`
+	AudioKey         string  `bson:"audiokey,omitempty"`
+	Mode             int     `bson:"mode,omitempty"`
+	Loudness         float64 `bson:"loudness,omitempty"`
+	Energy           float64 `bson:"energy,omitempty"`
+	Danceability     float64 `bson:"danceability,omitempty"`
+	Speechiness      float64 `bson:"speechiness,omitempty"`
+	Acousticness     float64 `bson:"acousticness,omitempty"`
+	Instrumentalness float64 `bson:"instrumentalness,omitempty"`
+	Liveness         float64 `bson:"liveness,omitempty"`
+	Valance          float64 `bson:"valance,omitempty"`
 }
 
 // AudioFeaturesOption represent the functional options for the audio features entity
 type AudioFeaturesOption func(*AudioFeatures)
-
-// WithAudioFeaturesID set the ID of the audio features
-func WithAudioFeaturesID(id int) AudioFeaturesOption {
-	return func(a *AudioFeatures) {
-		a.ID = id
-	}
-}
-
-// WithAudioFeaturesSongID set the song ID of the audio features
-func WithAudioFeaturesSongID(songID int) AudioFeaturesOption {
-	return func(a *AudioFeatures) {
-		a.SongID = songID
-	}
-}
 
 // WithAudioFeaturesTempo set the tempo of the audio features
 func WithAudioFeaturesTempo(tempo int) AudioFeaturesOption {

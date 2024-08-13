@@ -1,27 +1,36 @@
 // Package entity provides the domain model for the catalog service.
 package entity
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // Album represent an album entity
 type Album struct {
-	ID          int
-	Title       string
-	ArtistID    int
-	ReleaseDate time.Time
-	Genre       Genre
-	CoverArtURL string
-	TotalTracks int
-	Songs       []Song
+	ID          primitive.ObjectID `bson:"_id"`
+	Title       string             `bson:"title,omitempty"`
+	ArtistID    int                `bson:"artist_id,omitempty"`
+	ReleaseDate time.Time          `bson:"release_date,omitempty"`
+	Genre       Genre              `bson:"genre,omitempty"`
+	CoverArtURL string             `bson:"cover_art_url,omitempty"`
+	TotalTracks int                `bson:"total_tracks,omitempty"`
+	Songs       []Song             `bson:"songs,omitempty"`
 }
 
 // AlbumOption represent the functional options for the album entity
 type AlbumOption func(*Album)
 
 // WithAlbumID set the ID of the album
-func WithAlbumID(id int) AlbumOption {
+func WithAlbumID(id string) AlbumOption {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		panic(err)
+	}
+
 	return func(a *Album) {
-		a.ID = id
+		a.ID = objectID
 	}
 }
 

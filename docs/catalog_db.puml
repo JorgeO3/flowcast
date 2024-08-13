@@ -30,7 +30,6 @@ entity Album {
   * id : ObjectId
   --
   title : String
-  artist_id : ObjectId
   release_date : Date
   genre : Genre
   cover_art_url : String
@@ -47,7 +46,6 @@ object Member {
   end_date : Date
 }
 
-
 entity Song {
   * id : ObjectId
   --
@@ -63,7 +61,6 @@ entity Song {
 	explicit : Bool
 	bitrates : Array<AudioBitrate>
 }
-
 
 object AudioFeatures {
 	tempo : Int

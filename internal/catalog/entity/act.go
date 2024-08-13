@@ -2,25 +2,33 @@ package entity
 
 import "time"
 
+const (
+	// Database is the name of the database
+	Database = "catalog"
+
+	// ActCollection is the name of the act collection in the database
+	ActCollection = "acts"
+)
+
 // Act represent an musical act entity
 type Act struct {
-	ID                int
-	Name              string
-	Type              string
-	Biography         string
-	FormationDate     time.Time
-	DisbandDate       time.Time
-	ProfilePictureURL string
-	Genres            []Genre
-	Albums            []Album
-	Members           []Member
+	ID                string    `bson:"_id"`
+	Name              string    `bson:"name,omitempty"`
+	Type              string    `bson:"type,omitempty"`
+	Biography         string    `bson:"biography,omitempty"`
+	FormationDate     time.Time `bson:"formation_date,omitempty"`
+	DisbandDate       time.Time `bson:"disband_date,omitempty"`
+	ProfilePictureURL string    `bson:"profile_picture_url,omitempty"`
+	Genres            []Genre   `bson:"genres,omitempty"`
+	Albums            []Album   `bson:"albums,omitempty"`
+	Members           []Member  `bson:"members,omitempty"`
 }
 
 // ActOption represent the functional options for the act entity
 type ActOption func(*Act)
 
 // WithActID set the ID of the act
-func WithActID(id int) ActOption {
+func WithActID(id string) ActOption {
 	return func(a *Act) {
 		a.ID = id
 	}
