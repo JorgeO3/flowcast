@@ -12,16 +12,16 @@ const (
 
 // Act represent an musical act entity
 type Act struct {
-	ID                string    `bson:"_id"`
-	Name              string    `bson:"name,omitempty"`
-	Type              string    `bson:"type,omitempty"`
-	Biography         string    `bson:"biography,omitempty"`
-	FormationDate     time.Time `bson:"formation_date,omitempty"`
-	DisbandDate       time.Time `bson:"disband_date,omitempty"`
-	ProfilePictureURL string    `bson:"profile_picture_url,omitempty"`
-	Genres            []Genre   `bson:"genres,omitempty"`
-	Albums            []Album   `bson:"albums,omitempty"`
-	Members           []Member  `bson:"members,omitempty"`
+	ID                string    `json:"id,omitempty" bson:"_id" validate:"alpha"`
+	Name              string    `json:"name,omitempty" bson:"name,omitempty" validate:"required,alpha"`
+	Type              string    `json:"type,omitempty" bson:"type,omitempty" validate:"required,alpha"`
+	Biography         string    `json:"biography,omitempty" bson:"biography,omitempty" validate:"required,alpha"`
+	FormationDate     time.Time `json:"formationDate,omitempty" bson:"formation_date,omitempty" validate:"required,alphanum"`
+	DisbandDate       time.Time `json:"disbandDate,omitempty" bson:"disband_date,omitempty" validate:"required,alphanum"`
+	ProfilePictureURL string    `json:"profilePictureUrl,omitempty" bson:"profile_picture_url,omitempty" validate:"required,url"`
+	Genres            []Genre   `json:"genres,omitempty" bson:"genres,omitempty" validate:"required"`
+	Albums            []Album   `json:"albums,omitempty" bson:"albums,omitempty" validate:"required"`
+	Members           []Member  `json:"members,omitempty" bson:"members,omitempty" validate:"required"`
 }
 
 // ActOption represent the functional options for the act entity

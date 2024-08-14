@@ -2,17 +2,17 @@ package entity
 
 // AudioFeatures represent the audio features of a song
 type AudioFeatures struct {
-	Tempo            int     `bson:"tempo,omitempty"`
-	AudioKey         string  `bson:"audiokey,omitempty"`
-	Mode             int     `bson:"mode,omitempty"`
-	Loudness         float64 `bson:"loudness,omitempty"`
-	Energy           float64 `bson:"energy,omitempty"`
-	Danceability     float64 `bson:"danceability,omitempty"`
-	Speechiness      float64 `bson:"speechiness,omitempty"`
-	Acousticness     float64 `bson:"acousticness,omitempty"`
-	Instrumentalness float64 `bson:"instrumentalness,omitempty"`
-	Liveness         float64 `bson:"liveness,omitempty"`
-	Valance          float64 `bson:"valance,omitempty"`
+	Tempo            int     `json:"tempo" bson:"tempo,omitempty" validate:"required,int"`
+	AudioKey         string  `json:"audiokey" bson:"audiokey,omitempty" validate:"required,alpha"`
+	Mode             int     `json:"mode" bson:"mode,omitempty" validate:"required,int"`
+	Loudness         float64 `json:"loudness" bson:"loudness,omitempty" validate:"required,float"`
+	Energy           float64 `json:"energy" bson:"energy,omitempty" validate:"required,float"`
+	Danceability     float64 `json:"danceability" bson:"danceability,omitempty" validate:"required,float"`
+	Speechiness      float64 `json:"speechiness" bson:"speechiness,omitempty" validate:"required,float"`
+	Acousticness     float64 `json:"acousticness" bson:"acousticness,omitempty" validate:"required,float"`
+	Instrumentalness float64 `json:"instrumentalness" bson:"instrumentalness,omitempty" validate:"required,float"`
+	Liveness         float64 `json:"liveness" bson:"liveness,omitempty" validate:"required,float"`
+	Valance          float64 `json:"valance" bson:"valance,omitempty" validate:"required,float"`
 }
 
 // AudioFeaturesOption represent the functional options for the audio features entity

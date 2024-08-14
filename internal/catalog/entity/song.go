@@ -4,25 +4,22 @@ import "time"
 
 // Song represent a song entity
 type Song struct {
-	ID            int            `bson:"_id"`
-	Title         string         `bson:"title,omitempty"`
-	ArtistID      int            `bson:"artist_id,omitempty"`
-	AlbumID       int            `bson:"album_id,omitempty"`
-	AudioFeatures AudioFeatures  `bson:"audio_features,omitempty"`
-	Genre         Genre          `bson:"genre,omitempty"`
-	ReleaseDate   time.Time      `bson:"release_date,omitempty"`
-	Duration      int            `bson:"duration,omitempty"`
-	TrackNumber   int            `bson:"track_number,omitempty"`
-	Lyrics        string         `bson:"lyrics,omitempty"`
-	Explicit      bool           `bson:"explicit,omitempty"`
-	Bitrates      []AudioBitrate `bson:"bitrates,omitempty"`
+	ID            string         `json:"id,omitempty" bson:"_id" validate:""`
+	Title         string         `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
+	AudioFeatures AudioFeatures  `json:"audioFeatures,omitempty" bson:"audio_features,omitempty" validate:"required"`
+	Genre         Genre          `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
+	ReleaseDate   time.Time      `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,alphanum"`
+	Duration      int            `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,int"`
+	Lyrics        string         `json:"lyrics,omitempty" bson:"lyrics,omitempty" validate:"required,alpha"`
+	Explicit      bool           `json:"explicit,omitempty" bson:"explicit,omitempty" validate:"required"`
+	Bitrates      []AudioBitrate `json:"bitrates,omitempty" bson:"bitrates,omitempty" validate:"required"`
 }
 
 // SongOption represent the functional options for the song entity
 type SongOption func(*Song)
 
 // WithSongID set the ID of the song
-func WithSongID(id int) SongOption {
+func WithSongID(id string) SongOption {
 	return func(s *Song) {
 		s.ID = id
 	}
@@ -32,20 +29,6 @@ func WithSongID(id int) SongOption {
 func WithSongTitle(title string) SongOption {
 	return func(s *Song) {
 		s.Title = title
-	}
-}
-
-// WithSongArtistID set the artist ID of the song
-func WithSongArtistID(artistID int) SongOption {
-	return func(s *Song) {
-		s.ArtistID = artistID
-	}
-}
-
-// WithSongAlbumID set the album ID of the song
-func WithSongAlbumID(albumID int) SongOption {
-	return func(s *Song) {
-		s.AlbumID = albumID
 	}
 }
 
@@ -74,13 +57,6 @@ func WithSongReleaseDate(releaseDate time.Time) SongOption {
 func WithSongDuration(duration int) SongOption {
 	return func(s *Song) {
 		s.Duration = duration
-	}
-}
-
-// WithSongTrackNumber set the track number of the song
-func WithSongTrackNumber(trackNumber int) SongOption {
-	return func(s *Song) {
-		s.TrackNumber = trackNumber
 	}
 }
 

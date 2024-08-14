@@ -8,36 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// type mongoAct struct {
-// 	id            primitive.ObjectID `bson:"_id"`
-// 	name          string             `bson:"name,omitempty"`
-// 	actType       string             `bson:"type,omitempty"`
-// 	biography     string             `bson:"biography,omitempty"`
-// 	formationDate primitive.DateTime `bson:"formation_date,omitempty"`
-// 	disbandDate   primitive.DateTime `bson:"disband_date,omitempty"`
-// 	profilePicURL string             `bson:"profile_picture_url,omitempty"`
-// 	genres        []mongoGenre       `bson:"genres,omitempty"`
-// 	members       []mongoMember      `bson:"members,omitempty"`
-// 	albums        []mongoAlbum       `bson:"albums,omitempty"`
-// }
-
-// func fromAct(act *entity.Act) *mongoAct {
-// 	id, err := primitive.ObjectIDFromHex(act.ID)
-
-// 	return &mongoAct{
-// 		id: primitive.ObjectIDFromHex(act.ID),
-// 	}
-// }
-
-// type mongoMember struct {
-// 	name          string             `bson:"name,omitempty"`
-// 	biography     string             `bson:"biography,omitempty"`
-// 	birthDate     primitive.DateTime `bson:"birth_date,omitempty"`
-// 	profilePicURL string             `bson:"profile_picture_url,omitempty"`
-// 	startDate     primitive.DateTime `bson:"start_date,omitempty"`
-// 	endDate       primitive.DateTime `bson:"end_date,omitempty"`
-// }
-
 // MongoActRepository is a repository for the act entity.
 type MongoActRepository struct {
 	db         *mongo.Database
@@ -53,14 +23,14 @@ func NewMongoActRepository(db *mongo.Database, collection string) ActRepository 
 }
 
 // CreateAct implements ActRepository.
-func (m *MongoActRepository) CreateAct(ctx context.Context, act entity.Act) error {
+func (m *MongoActRepository) Create(ctx context.Context, act *entity.Act) (string, error) {
 	collection := m.db.Collection(m.collection)
 	_, err := collection.InsertOne(ctx, act)
-	return err
+	return "", err
 }
 
 // GetActByID implements ActRepository.
-func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity.Act, error) {
+func (m *MongoActRepository) GetByID(ctx context.Context, id string) (*entity.Act, error) {
 	var act entity.Act
 
 	collection := m.db.Collection(m.collection)
@@ -71,12 +41,12 @@ func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity
 }
 
 // UpdateAct implements ActRepository.
-func (m *MongoActRepository) UpdateAct(ctx context.Context, id string, updates map[string]interface{}) error {
+func (m *MongoActRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
 	panic("unimplemented")
 }
 
 // DeleteAct implements ActRepository.
-func (m *MongoActRepository) DeleteAct(ctx context.Context, id string) error {
+func (m *MongoActRepository) Delete(ctx context.Context, id string) error {
 	collection := m.db.Collection(m.collection)
 	filter := bson.M{"id": id}
 
