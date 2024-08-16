@@ -2,6 +2,8 @@ package entity
 
 import "time"
 
+const collectionAct = "acts"
+
 // Act represent an musical act entity
 type Act struct {
 	ID                int

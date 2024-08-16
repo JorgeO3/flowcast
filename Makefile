@@ -85,8 +85,8 @@ endef
 
 # Catalog storage service
 catalog_storage_port := 27017
-catalog_storage_root_user := "mongo_user"
-catalog_storage_root_password := "mongo_password"
+catalog_storage_root_user := "root"
+catalog_storage_root_password := "root"
 catalog_storage_server = "catalog-storage-service"
 
 define CATALOG_STORAGE_ENVS
@@ -111,7 +111,6 @@ CATALOG_STORAGE_ADMIN_PASSWORD=$(catalog_storage_admin_password) \
 CATALOG_STORAGE_ADMIN_URL=$(catalog_storage_admin_url) \
 CATALOG_STORAGE_ADMIN_BASICAUTH=$(catalog_storage_admin_basicauth);
 endef
-
 
 # *** Song ***
 # Song service

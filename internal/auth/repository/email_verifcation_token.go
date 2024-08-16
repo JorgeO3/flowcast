@@ -8,6 +8,5 @@ import (
 
 // EmailVerificationTokenRepo -.
 type EmailVerificationTokenRepo interface {
-	SaveTx(ctx context.Context, token *entity.EmailVerificationToken) error
 	FindByUserID(ctx context.Context, userID int) (*entity.EmailVerificationToken, error)
 }

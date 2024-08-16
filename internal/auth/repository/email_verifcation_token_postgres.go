@@ -31,6 +31,11 @@ type PostgresEmailVerificationTokenRepo struct {
 	*postgres.Postgres
 }
 
+// NewPostgresEmailVerificationTokenRepo -.
+func NewPostgresEmailVerificationTokenRepo(pg *postgres.Postgres) PostgresEmailVerificationTokenRepo {
+	return PostgresEmailVerificationTokenRepo{pg}
+}
+
 // FindByUserID implements EmailVerificationTokenRepo.
 func (p PostgresEmailVerificationTokenRepo) FindByUserID(ctx context.Context, userID int) (*entity.EmailVerificationToken, error) {
 	var emailVerificationT entity.EmailVerificationToken
