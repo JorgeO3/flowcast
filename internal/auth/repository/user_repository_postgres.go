@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
-	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
-	"gitlab.com/JorgeO3/flowcast/pkg/txmanager"
+	"github.com/JorgeO3/flowcast/internal/auth/entity"
+	"github.com/JorgeO3/flowcast/pkg/postgres"
+	"github.com/JorgeO3/flowcast/pkg/txmanager"
 )
 
 const (

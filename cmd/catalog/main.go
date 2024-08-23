@@ -4,9 +4,9 @@ package main
 import (
 	"log"
 
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/app"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/catalog/app"
+	"github.com/JorgeO3/flowcast/pkg/logger"
 )
 
 func main() {

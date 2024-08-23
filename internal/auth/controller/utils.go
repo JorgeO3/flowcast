@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gitlab.com/JorgeO3/flowcast/internal/auth/errors"
+	"github.com/JorgeO3/flowcast/internal/auth/errors"
 )
 
 func (c *Controller) handleError(w http.ResponseWriter, err error) {

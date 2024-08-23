@@ -1,25 +1,27 @@
 package entity
 
-import "time"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // Song represent a song entity
 type Song struct {
-	ID            string         `json:"id,omitempty" bson:"_id" validate:""`
-	Title         string         `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
-	AudioFeatures AudioFeatures  `json:"audioFeatures,omitempty" bson:"audio_features,omitempty" validate:"required"`
-	Genre         Genre          `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
-	ReleaseDate   time.Time      `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,alphanum"`
-	Duration      int            `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,int"`
-	Lyrics        string         `json:"lyrics,omitempty" bson:"lyrics,omitempty" validate:"required,alpha"`
-	Explicit      bool           `json:"explicit,omitempty" bson:"explicit,omitempty" validate:"required"`
-	Bitrates      []AudioBitrate `json:"bitrates,omitempty" bson:"bitrates,omitempty" validate:"required"`
+	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty" validate:"required"`
+	Title         string             `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
+	AudioFeatures AudioFeatures      `json:"audioFeatures,omitempty" bson:"audio_features,omitempty" validate:"required"`
+	Genre         Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
+	ReleaseDate   string             `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
+	Duration      int                `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,min=1"`
+	Lyrics        string             `json:"lyrics,omitempty" bson:"lyrics,omitempty" validate:"required"`
+	Explicit      bool               `json:"explicit,omitempty" bson:"explicit,omitempty"`
+	Bitrates      []AudioBitrate     `json:"bitrates,omitempty" bson:"bitrates,omitempty" validate:"required,dive"`
 }
 
 // SongOption represent the functional options for the song entity
 type SongOption func(*Song)
 
 // WithSongID set the ID of the song
-func WithSongID(id string) SongOption {
+func WithSongID(id primitive.ObjectID) SongOption {
 	return func(s *Song) {
 		s.ID = id
 	}
@@ -47,7 +49,7 @@ func WithSongGenre(genre Genre) SongOption {
 }
 
 // WithSongReleaseDate set the release date of the song
-func WithSongReleaseDate(releaseDate time.Time) SongOption {
+func WithSongReleaseDate(releaseDate string) SongOption {
 	return func(s *Song) {
 		s.ReleaseDate = releaseDate
 	}

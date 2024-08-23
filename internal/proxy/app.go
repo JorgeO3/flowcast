@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"gitlab.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/configs"
 )
 
 func Run(cfg *configs.ProxyConfig) {

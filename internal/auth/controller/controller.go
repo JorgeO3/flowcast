@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/errors"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/auth/errors"
+	"github.com/JorgeO3/flowcast/internal/auth/usecase"
+	"github.com/JorgeO3/flowcast/pkg/logger"
 )
 
 // Controller handles authentication-related requests.

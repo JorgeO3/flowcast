@@ -5,14 +5,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/auth/entity"
+	"github.com/JorgeO3/flowcast/internal/auth/errors"
+	"github.com/JorgeO3/flowcast/internal/auth/repository"
+	"github.com/JorgeO3/flowcast/internal/auth/service"
+	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/txmanager"
 	"github.com/asaskevich/govalidator"
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/errors"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/service"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
-	"gitlab.com/JorgeO3/flowcast/pkg/txmanager"
 )
 
 // SocialLink represents a social media link in JSON

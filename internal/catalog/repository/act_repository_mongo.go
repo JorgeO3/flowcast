@@ -3,93 +3,68 @@ package repository
 import (
 	"context"
 
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/entity"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/pkg/mongodb"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // MongoActRepository is a repository for the act entity.
 type MongoActRepository struct {
 	db         *mongo.Database
-	collection string
+	collection *mongo.Collection
 }
 
 // NewMongoActRepository creates a new instance of MongoActRepository.
 func NewMongoActRepository(db *mongo.Database, collection string) ActRepository {
 	return &MongoActRepository{
 		db:         db,
-		collection: collection,
+		collection: db.Collection(collection),
 	}
 }
 
 // CreateAct implements ActRepository.
-func (m *MongoActRepository) Create(ctx context.Context, act *entity.Act) (string, error) {
-	collection := m.db.Collection(m.collection)
-	_, err := collection.InsertOne(ctx, act)
-	return "", err
+func (m *MongoActRepository) CreateAct(ctx context.Context, act *entity.Act) (string, error) {
+	res, err := m.collection.InsertOne(ctx, act)
+	if err != nil {
+		return "", mongodb.MapError(err)
+	}
+	id := res.InsertedID.(primitive.ObjectID)
+	return id.String(), nil
 }
 
-// GetActByID implements ActRepository.
-func (m *MongoActRepository) GetByID(ctx context.Context, id string) (*entity.Act, error) {
-	var act entity.Act
-
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": id}
-
-	err := collection.FindOne(ctx, filter).Decode(&act)
-	return &act, err
-}
-
-// UpdateAct implements ActRepository.
-func (m *MongoActRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+// CreateManyActs implements ActRepository.
+func (m *MongoActRepository) CreateManyActs(context.Context, []*entity.Act) error {
 	panic("unimplemented")
 }
 
 // DeleteAct implements ActRepository.
-func (m *MongoActRepository) Delete(ctx context.Context, id string) error {
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": id}
-
-	_, err := collection.DeleteOne(ctx, filter)
-	return err
+func (m *MongoActRepository) DeleteAct(context.Context, primitive.ObjectID) error {
+	panic("unimplemented")
 }
 
-// AddAlbum implements ActRepository.
-func (m *MongoActRepository) AddAlbum(ctx context.Context, actID string, album entity.Album) error {
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": actID}
-	update := bson.M{"$push": bson.M{"albums": album}}
-
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+// DeleteManyActs implements ActRepository.
+func (m *MongoActRepository) DeleteManyActs(context.Context, primitive.M) error {
+	panic("unimplemented")
 }
 
-// AddMember implements ActRepository.
-func (m *MongoActRepository) AddMember(ctx context.Context, actID string, member entity.Member) error {
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": actID}
-	update := bson.M{"$push": bson.M{"members": member}}
-
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+// GetActByID implements ActRepository.
+func (m *MongoActRepository) GetActByID(context.Context, primitive.ObjectID) (*entity.Act, error) {
+	panic("unimplemented")
 }
 
-// RemoveAlbum implements ActRepository.
-func (m *MongoActRepository) RemoveAlbum(ctx context.Context, actID string, albumID string) error {
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": actID}
-	update := bson.M{"$pull": bson.M{"albums": bson.M{"id": albumID}}}
-
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+// GetManyActs implements ActRepository.
+func (m *MongoActRepository) GetManyActs(context.Context, primitive.M, *options.FindOptions) ([]*entity.Act, error) {
+	panic("unimplemented")
 }
 
-// RemoveMember implements ActRepository.
-func (m *MongoActRepository) RemoveMember(ctx context.Context, actID, memberName string) error {
-	collection := m.db.Collection(m.collection)
-	filter := bson.M{"id": actID}
-	update := bson.M{"$pull": bson.M{"members": bson.M{"Name": memberName}}}
+// UpdateAct implements ActRepository.
+func (m *MongoActRepository) UpdateAct(context.Context, *entity.Act) error {
+	panic("unimplemented")
+}
 
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+// UpdateManyActs implements ActRepository.
+func (m *MongoActRepository) UpdateManyActs(context.Context, primitive.M, primitive.M) error {
+	panic("unimplemented")
 }

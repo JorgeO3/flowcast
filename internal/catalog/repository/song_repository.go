@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

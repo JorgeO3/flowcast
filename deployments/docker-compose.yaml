@@ -1,33 +1,5 @@
 name: flowcast
 services:
-  auth-storage-service:
-    image: postgres:latest
-    ports:
-      - ${AUTH_STORAGE_PORT}:5432
-    environment:
-      POSTGRES_USER: ${AUTH_STORAGE_USER}
-      POSTGRES_PASSWORD: ${AUTH_STORAGE_PASSWORD}
-      POSTGRES_DB: ${AUTH_STORAGE_DB}
-    volumes:
-      - ./data/postgres_data:/var/lib/postgresql/data
-
-  auth-storage-admin-service:
-    image: adminer
-    restart: always
-    ports:
-      - ${AUTH_STORAGE_ADMIN_PORT}:8080
-
-  mail-service:
-    image: mailhog/mailhog
-    restart: on-failure
-    volumes:
-      - ./data/maildir:/maildir
-    environment:
-      - MH_STORAGE=maildir
-    ports:
-      - ${MAILHOG_SMTP_PORT}:1025
-      - ${MAILHOG_HTTP_PORT}:8025
-
   catalog-storage-service:
     image: mongo
     restart: always
@@ -45,39 +17,16 @@ services:
       retries: 5
       start_period: 40s
 
-  catalog-storage-admin-service:
-    image: mongo-express
-    depends_on:
-      catalog-storage-service:
-        condition: service_healthy
-    restart: always
-    ports:
-      - ${CATALOG_STORAGE_ADMIN_PORT}:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${CATALOG_STORAGE_ADMIN_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${CATALOG_STORAGE_ADMIN_PASSWORD}
-      ME_CONFIG_MONGODB_URL: ${CATALOG_STORAGE_ADMIN_URL}
-      ME_CONFIG_BASICAUTH: ${CATALOG_STORAGE_ADMIN_BASICAUTH}
-
-  song-storage-service:
-    image: bitnami/minio:latest
-    ports:
-      - ${SONG_STORAGE_WEB_PORT}:9000
-      - ${SONG_STORAGE_API_PORT}:9001
-    networks:
-      - minio_network
-    volumes:
-      - "./data/minio_data:/data"
-    environment:
-      - MINIO_ROOT_USER=${SONG_STORAGE_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${SONG_STORAGE_ROOT_PASSWORD}
-      - MINIO_DEFAULT_BUCKETS=${SONG_STORAGE_DEFAULT_BUCKETS}
-
-
-networks:
-  minio_network:
-    driver: bridge
-
-volumes:
-  minio_data:
-    driver: local
+  # song-storage-service:
+  #   image: bitnami/minio:latest
+  #   ports:
+  #     - ${SONG_STORAGE_WEB_PORT}:9000
+  #     - ${SONG_STORAGE_API_PORT}:9001
+  #   networks:
+  #     - minio_network
+  #   volumes:
+  #     - "./data/minio_data:/data"
+  #   environment:
+  #     - MINIO_ROOT_USER=${SONG_STORAGE_ROOT_USER}
+  #     - MINIO_ROOT_PASSWORD=${SONG_STORAGE_ROOT_PASSWORD}
+  #     - MINIO_DEFAULT_BUCKETS=${SONG_STORAGE_DEFAULT_BUCKETS}

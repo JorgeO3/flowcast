@@ -4,7 +4,7 @@ package repository
 import (
 	"context"
 
-	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
+	"github.com/JorgeO3/flowcast/internal/auth/entity"
 )
 
 // UserRepository is the interface that defines the methods for the user repository.

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
+	"github.com/JorgeO3/flowcast/internal/auth/entity"
 )
 
 // SocialLinkRepo -.

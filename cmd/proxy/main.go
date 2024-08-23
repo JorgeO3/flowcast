@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/proxy"
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/proxy"
 )
 
 func main() {

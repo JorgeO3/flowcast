@@ -6,22 +6,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JorgeO3/flowcast/configs"
+	c "github.com/JorgeO3/flowcast/internal/catalog/controller/http"
+	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	uc "github.com/JorgeO3/flowcast/internal/catalog/usecase"
+	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/mongodb"
+	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"gitlab.com/JorgeO3/flowcast/configs"
-	c "gitlab.com/JorgeO3/flowcast/internal/catalog/controller/http"
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/entity"
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/repository"
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/usecase"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
-	"gitlab.com/JorgeO3/flowcast/pkg/mongo"
 )
 
 // Run starts the catalog service.
 func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	logg.Info("Starting catalog service")
 
-	mg, err := mongo.New(cfg.DatabaseURL)
+	mg, err := mongodb.New(cfg.DatabaseURL)
 	if err != nil {
 		logg.Fatal(fmt.Errorf("mongo connection error: %w", err))
 	}
@@ -30,10 +31,15 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	logg.Debug("Connected to MongoDB")
 
 	db := mg.Client.Database(entity.Database)
-
 	actRepo := repository.NewMongoActRepository(db, entity.ActCollection)
 
-	createActUC := usecase.NewCreateAct(actRepo, logg)
+	val := validator.New()
+
+	createActUC := uc.NewCreateAct(
+		uc.WithActLogger(logg),
+		uc.WithActValidator(val),
+		uc.WithActRepository(actRepo),
+	)
 
 	controller := c.New(
 		c.WithConfig(cfg),
@@ -50,7 +56,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	r.Use(logger.ZerologMiddleware(logg))       // Custom middleware to log HTTP requests with zerolog.
 	r.Use(middleware.Recoverer)                 // Middleware to recover from panics and send an appropriate error response.
 	r.Use(middleware.Heartbeat("/"))            // Middleware to provide a healthcheck endpoint at the root path.
-	r.Use(middleware.RequestSize(1024))         // Middleware to limit the maximum request size to 1 KB.
+	r.Use(middleware.RequestSize(1024 * 100))   // Middleware to limit the maximum request size to 100 KB.
 	r.Use(middleware.Timeout(60 * time.Second)) // Middleware to set a timeout of 60 seconds for each request.
 	r.Use(logger.ErrorHandlingMiddleware(logg)) // Custom middleware to handle server errors.
 

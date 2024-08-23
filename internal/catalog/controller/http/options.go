@@ -1,9 +1,9 @@
 package http
 
 import (
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/catalog/usecase"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/catalog/usecase"
+	"github.com/JorgeO3/flowcast/pkg/logger"
 )
 
 // Opts represents the functional options for the controller.

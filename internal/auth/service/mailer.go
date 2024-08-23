@@ -2,7 +2,7 @@
 package service
 
 import (
-	"gitlab.com/JorgeO3/flowcast/pkg/smtp"
+	"github.com/JorgeO3/flowcast/pkg/smtp"
 )
 
 // Mailer is an interface for sending emails.

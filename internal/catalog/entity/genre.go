@@ -2,8 +2,8 @@ package entity
 
 // Genre represent a value object
 type Genre struct {
-	Name        string `json:"name,omitempty" bson:"name,omitempty" valid:"required,alpha"`
-	Description string `json:"description,omitempty" bson:"description,omitempty" valid:"required,alpha"`
+	Name        string `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
+	Description string `json:"description,omitempty" bson:"description,omitempty" validate:"required"`
 }
 
 // GenreOption represent the functional options for the genre entity

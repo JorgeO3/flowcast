@@ -2,7 +2,7 @@ package entity
 
 // AudioBitrate is a value object that represent the bitrate of a song
 type AudioBitrate struct {
-	Bitrate  int    `json:"bitrate,omitempty" bson:"bitrate,omitempty" validate:"required,int"`
+	Bitrate  int    `json:"bitrate,omitempty" bson:"bitrate,omitempty" validate:"required,min=64,max=320"`
 	AudioURL string `json:"audioUrl,omitempty" bson:"audio_url,omitempty" validate:"required,url"`
 }
 

@@ -2,17 +2,17 @@ package entity
 
 // AudioFeatures represent the audio features of a song
 type AudioFeatures struct {
-	Tempo            int     `json:"tempo" bson:"tempo,omitempty" validate:"required,int"`
-	AudioKey         string  `json:"audiokey" bson:"audiokey,omitempty" validate:"required,alpha"`
-	Mode             int     `json:"mode" bson:"mode,omitempty" validate:"required,int"`
-	Loudness         float64 `json:"loudness" bson:"loudness,omitempty" validate:"required,float"`
-	Energy           float64 `json:"energy" bson:"energy,omitempty" validate:"required,float"`
-	Danceability     float64 `json:"danceability" bson:"danceability,omitempty" validate:"required,float"`
-	Speechiness      float64 `json:"speechiness" bson:"speechiness,omitempty" validate:"required,float"`
-	Acousticness     float64 `json:"acousticness" bson:"acousticness,omitempty" validate:"required,float"`
-	Instrumentalness float64 `json:"instrumentalness" bson:"instrumentalness,omitempty" validate:"required,float"`
-	Liveness         float64 `json:"liveness" bson:"liveness,omitempty" validate:"required,float"`
-	Valance          float64 `json:"valance" bson:"valance,omitempty" validate:"required,float"`
+	Tempo            int     `json:"tempo" bson:"tempo,omitempty" validate:"required,min=60,max=200"`
+	AudioKey         string  `json:"audiokey" bson:"audiokey,omitempty" validate:"required"`
+	Mode             string  `json:"mode" bson:"mode,omitempty" validate:"required,oneof=0 1"`
+	Loudness         float64 `json:"loudness" bson:"loudness,omitempty" validate:"required,min=-60,max=0"`
+	Energy           float64 `json:"energy" bson:"energy,omitempty" validate:"required,min=0,max=1"`
+	Danceability     float64 `json:"danceability" bson:"danceability,omitempty" validate:"required,min=0,max=1"`
+	Speechiness      float64 `json:"speechiness" bson:"speechiness,omitempty" validate:"required,min=0,max=1"`
+	Acousticness     float64 `json:"acousticness" bson:"acousticness,omitempty" validate:"required,min=0,max=1"`
+	Instrumentalness float64 `json:"instrumentalness" bson:"instrumentalness,omitempty" validate:"required,min=0,max=1"`
+	Liveness         float64 `json:"liveness" bson:"liveness,omitempty" validate:"required,min=0,max=1"`
+	Valance          float64 `json:"valance" bson:"valance,omitempty" validate:"required,min=0,max=1"`
 }
 
 // AudioFeaturesOption represent the functional options for the audio features entity
@@ -33,7 +33,7 @@ func WithAudioFeaturesAudioKey(audioKey string) AudioFeaturesOption {
 }
 
 // WithAudioFeaturesMode set the mode of the audio features
-func WithAudioFeaturesMode(mode int) AudioFeaturesOption {
+func WithAudioFeaturesMode(mode string) AudioFeaturesOption {
 	return func(a *AudioFeatures) {
 		a.Mode = mode
 	}

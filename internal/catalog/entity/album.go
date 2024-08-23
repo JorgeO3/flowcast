@@ -2,34 +2,27 @@
 package entity
 
 import (
-	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Album represent an album entity
 type Album struct {
-	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id" validate:"required,alpha"`
-	Title       string             `json:"title,omitempty" bson:"title,omitempty" validate:"required,alpha"`
-	ReleaseDate time.Time          `json:"releasedate,omitempty" bson:"release_date,omitempty" validate:"required,alpha"`
-	Genre       Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required,alpha"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty" validate:"required"`
+	Title       string             `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
+	ReleaseDate string             `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
+	Genre       Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
 	CoverArtURL string             `json:"coverarturl,omitempty" bson:"cover_art_url,omitempty" validate:"required,url"`
-	TotalTracks int                `json:"totaltracks,omitempty" bson:"total_tracks,omitempty" validate:"required,alpha"`
-	Songs       []Song             `json:"songs,omitempty" bson:"songs,omitempty" validate:"required"`
+	TotalTracks int                `json:"totaltracks,omitempty" bson:"total_tracks,omitempty" validate:"required,min=1"`
+	Songs       []Song             `json:"songs,omitempty" bson:"songs,omitempty" validate:"dive"`
 }
 
 // AlbumOption represent the functional options for the album entity
 type AlbumOption func(*Album)
 
 // WithAlbumID set the ID of the album
-func WithAlbumID(id string) AlbumOption {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		panic(err)
-	}
-
+func WithAlbumID(id primitive.ObjectID) AlbumOption {
 	return func(a *Album) {
-		a.ID = objectID
+		a.ID = id
 	}
 }
 
@@ -41,7 +34,7 @@ func WithAlbumTitle(title string) AlbumOption {
 }
 
 // WithAlbumReleaseDate set the release date of the album
-func WithAlbumReleaseDate(releaseDate time.Time) AlbumOption {
+func WithAlbumReleaseDate(releaseDate string) AlbumOption {
 	return func(a *Album) {
 		a.ReleaseDate = releaseDate
 	}

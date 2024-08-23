@@ -3,9 +3,9 @@ package usecase
 import (
 	"os"
 
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/entity"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/service"
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/auth/entity"
+	"github.com/JorgeO3/flowcast/internal/auth/service"
 )
 
 func createUserEntity(input UserRegistrationInput) (*entity.User, error) {

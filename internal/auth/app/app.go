@@ -6,22 +6,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JorgeO3/flowcast/configs"
+	"github.com/JorgeO3/flowcast/internal/auth/controller"
+	"github.com/JorgeO3/flowcast/internal/auth/repository"
+	"github.com/JorgeO3/flowcast/internal/auth/service"
+	"github.com/JorgeO3/flowcast/internal/auth/usecase"
+	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/postgres"
+	"github.com/JorgeO3/flowcast/pkg/smtp"
+	"github.com/JorgeO3/flowcast/pkg/txmanager"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/v5/middleware"
-	"gitlab.com/JorgeO3/flowcast/configs"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/controller"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/repository"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/service"
-	"gitlab.com/JorgeO3/flowcast/internal/auth/usecase"
-	"gitlab.com/JorgeO3/flowcast/pkg/logger"
-	"gitlab.com/JorgeO3/flowcast/pkg/postgres"
-	"gitlab.com/JorgeO3/flowcast/pkg/smtp"
-	"gitlab.com/JorgeO3/flowcast/pkg/txmanager"
 )
 
 // Run starts the auth service.
 func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 	// Establish a connection to the PostgreSQL database using the database URL provided in the configuration.
+
+	fmt.Printf("Database URL: %v", cfg.DatabaseURL)
+
 	pg, err := postgres.New(cfg.DatabaseURL)
 	if err != nil {
 		logg.Fatal(fmt.Errorf("postgres connection error: %w", err))
