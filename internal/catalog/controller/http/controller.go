@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/JorgeO3/flowcast/configs"
-	"github.com/JorgeO3/flowcast/internal/catalog/usecase"
+	uc "github.com/JorgeO3/flowcast/internal/catalog/usecase"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 )
 
 // Controller is the HTTP controller for the catalog service.
 type Controller struct {
-	CreateActUC *usecase.CreateActUC
-	UpdateActUC *usecase.UpdateActUC
+	CreateActUC *uc.CreateActUC
+	UpdateActUC *uc.UpdateActUC
 	Logger      logger.Interface
 	Cfg         *configs.CatalogConfig
 }
@@ -25,7 +25,7 @@ func (c *Controller) CreateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	var input usecase.CreateActInput
+	var input uc.CreateActInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		c.Logger.Error("Error decoding request body for CreateAct")
@@ -47,7 +47,7 @@ func (c *Controller) UpdateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	var input usecase.UpdateActInput
+	var input uc.UpdateActInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		c.Logger.Error("Error decoding request body for UpdateAct")
