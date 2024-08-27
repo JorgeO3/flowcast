@@ -46,21 +46,21 @@ type CreateActUC struct {
 // CreateActUCOpts represents the functional options for the CreateActUC.
 type CreateActUCOpts func(uc *CreateActUC)
 
-// WithActRepository sets the ActRepository in the CreateActUC.
+// WithCreateActRepository sets the ActRepository in the CreateActUC.
 func WithCreateActRepository(repo repository.ActRepository) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.ActRepository = repo
 	}
 }
 
-// WithActLogger sets the logger in the CreateActUC.
+// WithCreateActLogger sets the logger in the CreateActUC.
 func WithCreateActLogger(logger logger.Interface) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Logger = logger
 	}
 }
 
-// WithActValidator sets the validator in the CreateActUC.
+// WithCreateActValidator sets the validator in the CreateActUC.
 func WithCreateActValidator(validator validator.Validator) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Validator = validator
