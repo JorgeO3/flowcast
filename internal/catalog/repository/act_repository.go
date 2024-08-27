@@ -17,7 +17,6 @@ type ActRepository interface {
 	GetActByID(context.Context, primitive.ObjectID) (*entity.Act, error)
 	GetManyActs(context.Context, bson.M, *options.FindOptions) ([]*entity.Act, error)
 	UpdateAct(context.Context, *entity.Act) error
-	UpdateManyActs(context.Context, bson.M, bson.M) error
 	DeleteAct(context.Context, primitive.ObjectID) error
 	DeleteManyActs(context.Context, bson.M) error
 }

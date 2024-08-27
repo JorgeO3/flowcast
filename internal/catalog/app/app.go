@@ -36,15 +36,22 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	val := validator.New()
 
 	createActUC := uc.NewCreateAct(
-		uc.WithActLogger(logg),
-		uc.WithActValidator(val),
-		uc.WithActRepository(actRepo),
+		uc.WithCreateActLogger(logg),
+		uc.WithCreateActValidator(val),
+		uc.WithCreateActRepository(actRepo),
+	)
+
+	updateActUC := uc.NewUpdateAct(
+		uc.WithUpdateActLogger(logg),
+		uc.WithUpdateActValidator(val),
+		uc.WithUpdateActRepository(actRepo),
 	)
 
 	controller := c.New(
 		c.WithConfig(cfg),
 		c.WithLogger(logg),
 		c.WithCreateActUC(createActUC),
+		c.WithUpdateActUC(updateActUC),
 	)
 
 	// Create a new router using the chi library.
@@ -62,6 +69,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 
 	// Set up routes for the router.
 	r.Post("/act", controller.CreateAct)
+	r.Put("/act", controller.UpdateAct)
 
 	// Construct the server address using the host and port specified in the configuration.
 	addr := fmt.Sprintf("%s:%s", cfg.HTTPHost, cfg.HTTPPort)

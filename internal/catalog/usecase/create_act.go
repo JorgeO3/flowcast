@@ -47,21 +47,21 @@ type CreateActUC struct {
 type CreateActUCOpts func(uc *CreateActUC)
 
 // WithActRepository sets the ActRepository in the CreateActUC.
-func WithActRepository(repo repository.ActRepository) CreateActUCOpts {
+func WithCreateActRepository(repo repository.ActRepository) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.ActRepository = repo
 	}
 }
 
 // WithActLogger sets the logger in the CreateActUC.
-func WithActLogger(logger logger.Interface) CreateActUCOpts {
+func WithCreateActLogger(logger logger.Interface) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Logger = logger
 	}
 }
 
 // WithActValidator sets the validator in the CreateActUC.
-func WithActValidator(validator validator.Validator) CreateActUCOpts {
+func WithCreateActValidator(validator validator.Validator) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Validator = validator
 	}
@@ -75,10 +75,6 @@ func NewCreateAct(opts ...CreateActUCOpts) *CreateActUC {
 	}
 	return uc
 }
-
-// Level 3 - Error level
-// Level 1 - Info level
-// Level 0 - Debug level
 
 // Execute executes the CreateAct use case.
 func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*CreateActOutput, error) {

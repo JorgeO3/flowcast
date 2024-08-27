@@ -5,6 +5,7 @@ import (
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/pkg/mongodb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -34,6 +35,18 @@ func (m *MongoActRepository) CreateAct(ctx context.Context, act *entity.Act) (st
 	return id.String(), nil
 }
 
+// UpdateAct implements ActRepository.
+func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) error {
+	filter := bson.M{"_id": act.ID}
+	update := bson.M{"$set": act}
+
+	_, err := m.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return mongodb.MapError(err)
+	}
+	return nil
+}
+
 // CreateManyActs implements ActRepository.
 func (m *MongoActRepository) CreateManyActs(context.Context, []*entity.Act) error {
 	panic("unimplemented")
@@ -56,15 +69,5 @@ func (m *MongoActRepository) GetActByID(context.Context, primitive.ObjectID) (*e
 
 // GetManyActs implements ActRepository.
 func (m *MongoActRepository) GetManyActs(context.Context, primitive.M, *options.FindOptions) ([]*entity.Act, error) {
-	panic("unimplemented")
-}
-
-// UpdateAct implements ActRepository.
-func (m *MongoActRepository) UpdateAct(context.Context, *entity.Act) error {
-	panic("unimplemented")
-}
-
-// UpdateManyActs implements ActRepository.
-func (m *MongoActRepository) UpdateManyActs(context.Context, primitive.M, primitive.M) error {
 	panic("unimplemented")
 }

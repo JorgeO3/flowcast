@@ -16,6 +16,13 @@ func WithCreateActUC(uc *usecase.CreateActUC) Opts {
 	}
 }
 
+// WithUpdateActUC sets the UpdateActUC in the controller.
+func WithUpdateActUC(uc *usecase.UpdateActUC) Opts {
+	return func(c *Controller) {
+		c.UpdateActUC = uc
+	}
+}
+
 // WithLogger sets the logger in the controller.
 func WithLogger(l logger.Interface) Opts {
 	return func(c *Controller) {

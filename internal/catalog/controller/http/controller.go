@@ -15,6 +15,7 @@ import (
 // Controller is the HTTP controller for the catalog service.
 type Controller struct {
 	CreateActUC *usecase.CreateActUC
+	UpdateActUC *usecase.UpdateActUC
 	Logger      logger.Interface
 	Cfg         *configs.CatalogConfig
 }
@@ -35,6 +36,27 @@ func (c *Controller) CreateAct(w http.ResponseWriter, r *http.Request) {
 	output, err := c.CreateActUC.Execute(ctx, input)
 	if err != nil {
 		c.Logger.Error("Error in CreateAct use case execution")
+		c.handleError(w, err)
+	}
+
+	c.respondJSON(w, output)
+}
+
+// UpdateAct updates an act.
+func (c *Controller) UpdateAct(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var input usecase.UpdateActInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		c.Logger.Error("Error decoding request body for UpdateAct")
+		c.handleError(w, err)
+	}
+
+	output, err := c.UpdateActUC.Execute(ctx, input)
+	if err != nil {
+		c.Logger.Error("Error in UpdateAct use case execution")
 		c.handleError(w, err)
 	}
 
