@@ -24,7 +24,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 
 	mg, err := mongodb.New(cfg.DatabaseURL)
 	if err != nil {
-		logg.Fatal(fmt.Errorf("mongo connection error: %w", err))
+		logg.Fatal("mongo connection error: %w", err)
 	}
 	defer mg.Close()
 
@@ -69,6 +69,6 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 
 	// Start the server and listen for incoming requests.
 	if err := http.ListenAndServe(addr, r); err != nil {
-		logg.Fatal(fmt.Errorf("failed to start server: %w", err))
+		logg.Fatal("failed to start server: %w", err)
 	}
 }

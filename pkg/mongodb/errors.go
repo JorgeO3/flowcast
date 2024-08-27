@@ -2,7 +2,7 @@ package mongodb
 
 import (
 	"fmt"
-	"strings"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -149,45 +149,76 @@ func NewError(code ErrorCode, message string) Error {
 	}
 }
 
+// FromMongoCommandError creates a new Error from a mongo.CommandError.
+func FromMongoCommandError(err mongo.CommandError) Error {
+	return Error{
+		Code:    ErrorCode(err.Code),
+		Message: fmt.Sprintf("MongoDB command error - Code: %d - Type: %s", err.Code, err.Name),
+	}
+}
+
+// FromMongoWriteException creates a new Error from a mongo.WriteException.
+func FromMongoWriteException(err mongo.WriteException) Error {
+	if len(err.WriteErrors) == 0 {
+		return Error{}
+	}
+
+	code := strconv.Itoa(err.WriteErrors[0].Code)
+	msg := err.WriteErrors[0].Message
+
+	return Error{
+		Code:    ErrorCode(code),
+		Message: fmt.Sprintf("MongoDB write error - Code: %s - Message: %s", code, msg),
+	}
+}
+
+// FromMongoBulkWriteException creates a new Error from a mongo.BulkWriteException.
+func FromMongoBulkWriteException(err mongo.BulkWriteException) Error {
+	if len(err.WriteErrors) == 0 {
+		return Error{}
+	}
+
+	code := strconv.Itoa(err.WriteErrors[0].Code)
+	msg := err.WriteErrors[0].Message
+
+	return Error{
+		Code:    ErrorCode(code),
+		Message: fmt.Sprintf("MongoDB bulk write error - Code: %s - Message: %s", code, msg),
+	}
+}
+
+// FromMongoWriteError creates a new Error from a mongo.WriteError.
+func FromMongoWriteError(err mongo.WriteError) Error {
+	code := strconv.Itoa(err.Code)
+	msg := err.Message
+
+	return Error{
+		Code:    ErrorCode(code),
+		Message: fmt.Sprintf("MongoDB write error - Code: %s - Message: %s", code, msg),
+	}
+}
+
+// NewUnknowedError creates a new Error with an unknown error code.
+func NewUnknowedError(e error) Error {
+	return NewError(UnknowedError, e.Error())
+}
+
 // MapError maps a MongoDB error to a custom Error.
 func MapError(err error) Error {
 	if err == nil {
 		return Error{}
 	}
 
-	var errorMessage strings.Builder
-	var errorCode ErrorCode
-
 	switch typedErr := err.(type) {
 	case mongo.CommandError:
-		errorCode = ErrorCode(typedErr.Code)
-		errorMessage.WriteString(fmt.Sprintf("MongoDB command error - Code: %d - Type: %s", typedErr.Code, typedErr.Name))
-
+		return FromMongoCommandError(typedErr)
 	case mongo.WriteException:
-		if len(typedErr.WriteErrors) > 0 {
-			errorCode = ErrorCode(typedErr.WriteErrors[0].Code)
-			errorMessage.WriteString(fmt.Sprintf("MongoDB write error - Code: %d - Message: %s",
-				typedErr.WriteErrors[0].Code, typedErr.WriteErrors[0].Message))
-		}
-
+		return FromMongoWriteException(typedErr)
 	case mongo.BulkWriteException:
-		if len(typedErr.WriteErrors) > 0 {
-			errorCode = ErrorCode(typedErr.WriteErrors[0].Code)
-			errorMessage.WriteString(fmt.Sprintf("MongoDB bulk write error - Code: %d - Message: %s",
-				typedErr.WriteErrors[0].Code, typedErr.WriteErrors[0].Message))
-		}
-
+		return FromMongoBulkWriteException(typedErr)
 	case mongo.WriteError:
-		errorCode = ErrorCode(typedErr.Code)
-		errorMessage.WriteString(fmt.Sprintf("MongoDB write error - Code: %d - Message: %s",
-			typedErr.Code, typedErr.Message))
-
+		return FromMongoWriteError(typedErr)
 	default:
-		errorCode = UnknowedError
-		errorMessage.WriteString(fmt.Sprintf("Unknown MongoDB error - Message: %s", err.Error()))
+		return NewUnknowedError(typedErr)
 	}
-
-	errorMessage.WriteString(" - Suggestion: Please check your MongoDB operation and try again")
-
-	return NewError(errorCode, errorMessage.String())
 }

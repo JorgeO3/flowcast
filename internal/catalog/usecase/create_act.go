@@ -16,7 +16,7 @@ type CreateActInput struct {
 	e.Act
 }
 
-func (cai CreateActInput) toEntity() (*e.Act, error) {
+func (cai CreateActInput) toEntity() *e.Act {
 	return e.NewAct(
 		e.WithActID(cai.ID),
 		e.WithActName(cai.Name),
@@ -53,14 +53,14 @@ func WithActRepository(repo repository.ActRepository) CreateActUCOpts {
 	}
 }
 
-// WithLogger sets the logger in the CreateActUC.
+// WithActLogger sets the logger in the CreateActUC.
 func WithActLogger(logger logger.Interface) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Logger = logger
 	}
 }
 
-// WithValidator sets the validator in the CreateActUC.
+// WithActValidator sets the validator in the CreateActUC.
 func WithActValidator(validator validator.Validator) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Validator = validator
@@ -76,26 +76,25 @@ func NewCreateAct(opts ...CreateActUCOpts) *CreateActUC {
 	return uc
 }
 
+// Level 3 - Error level
+// Level 1 - Info level
+// Level 0 - Debug level
+
 // Execute executes the CreateAct use case.
 func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*CreateActOutput, error) {
-	uc.Logger.Info("Executing CreateAct use case")
+	uc.Logger.Info("Creating a new musical act")
 
 	if err := uc.Validator.Validate(input); err != nil {
-		uc.Logger.Warn("Invalid input data for user registration - %s", err)
-		return &CreateActOutput{}, errors.NewValidation("Invalid input data", err)
+		uc.Logger.Warn("Invalid input: %v", err)
+		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	act, err := input.toEntity()
+	id, err := uc.ActRepository.CreateAct(ctx, input.toEntity())
 	if err != nil {
-		uc.Logger.Error("Failed to create act entity - %s", err)
-		return &CreateActOutput{}, errors.NewValidation("Failed to create act entity", err)
+		uc.Logger.Error("Error inserting act in db: %v", err)
+		return nil, errors.HandleRepoError(err)
 	}
 
-	id, err := uc.ActRepository.CreateAct(ctx, act)
-	if err != nil {
-		uc.Logger.Error("Failed to create act error - %s", err)
-		return &CreateActOutput{}, errors.NewInternal("Failed to insert the act in the database", err)
-	}
-
+	uc.Logger.Info("Act created successfully")
 	return &CreateActOutput{ID: id}, nil
 }

@@ -15,11 +15,11 @@ import (
 
 // Interface define los métodos que debe implementar un logger.
 type Interface interface {
-	Debug(message interface{}, args ...interface{})
+	Debug(message string, args ...interface{})
 	Info(message string, args ...interface{})
 	Warn(message string, args ...interface{})
-	Error(message interface{}, args ...interface{})
-	Fatal(message interface{}, args ...interface{})
+	Error(message string, args ...interface{})
+	Fatal(message string, args ...interface{})
 }
 
 // Logger es la implementación del logger usando zerolog.
@@ -34,9 +34,6 @@ func New(level string) Interface {
 	zerolog.SetGlobalLevel(parseLogLevel(level))
 
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
-	// zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-	// 	return shortenPath(file, line)
-	// }
 	return &Logger{
 		logger: &logger,
 	}
@@ -71,63 +68,48 @@ func shortenPath(file string, line int) string {
 	return file + ":" + strconv.Itoa(line)
 }
 
-// Debug registra un mensaje de depuración.
-func (l *Logger) Debug(message interface{}, args ...interface{}) {
-	l.msg("debug", message, args...)
+// Debug logs a debug message
+func (l *Logger) Debug(message string, args ...interface{}) {
+	l.log(zerolog.DebugLevel, message, args...)
 }
 
-// Info registra un mensaje informativo.
+// Info logs an info message
 func (l *Logger) Info(message string, args ...interface{}) {
-	l.log(message, args...)
+	l.log(zerolog.InfoLevel, message, args...)
 }
 
-// Warn registra un mensaje de advertencia.
+// Warn logs a warning message
 func (l *Logger) Warn(message string, args ...interface{}) {
-	l.log(message, args...)
+	l.log(zerolog.WarnLevel, message, args...)
 }
 
-// Error registra un mensaje de error.
-func (l *Logger) Error(message interface{}, args ...interface{}) {
-	if l.logger.GetLevel() == zerolog.DebugLevel {
-		l.Debug(message, args...)
-	}
-	l.msg("error", message, args...)
+// Error logs an error message
+func (l *Logger) Error(message string, args ...interface{}) {
+	l.log(zerolog.ErrorLevel, message, args...)
 }
 
-// Fatal registra un mensaje de error fatal y termina el programa.
-func (l *Logger) Fatal(message interface{}, args ...interface{}) {
-	l.msg("fatal", message, args...)
+// Fatal logs a fatal message and exits the program
+func (l *Logger) Fatal(message string, args ...interface{}) {
+	l.log(zerolog.FatalLevel, message, args...)
 	os.Exit(1)
 }
 
-func (l *Logger) log(message string, args ...interface{}) {
-	l.logger.Info().Msgf(message, args...)
-}
-
-func (l *Logger) msg(level string, message interface{}, args ...interface{}) {
-	switch msg := message.(type) {
-	case error:
-		l.log(msg.Error(), args...)
-	case string:
-		l.log(msg, args...)
-	default:
-		l.log(fmt.Sprintf("%s message %v has unknown type %v", level, message, msg))
+func (l *Logger) log(level zerolog.Level, message string, args ...interface{}) {
+	event := l.logger.WithLevel(level)
+	if len(args) > 0 {
+		event = event.Fields(map[string]interface{}{
+			"details": fmt.Sprintf(message, args...),
+		})
+		message = "Log entry with details"
 	}
+	event.Msg(message)
 }
 
-// ZerologMiddleware improves the format of the log entries by adding more information about the request.
+// ZerologMiddleware for logging HTTP requests
 func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-
-			// Log the request
-			logEntry := logg.(*Logger).logger.With().
-				Str("method", r.Method).
-				Str("url", r.URL.String()).
-				Str("remote_addr", r.RemoteAddr).
-				Str("user_agent", r.UserAgent()).
-				Logger()
 
 			// Wrap the response writer
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
@@ -136,7 +118,11 @@ func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 
 			// Log the response
-			logEntry.Info().
+			logg.(*Logger).logger.Info().
+				Str("method", r.Method).
+				Str("url", r.URL.String()).
+				Str("remote_addr", r.RemoteAddr).
+				Str("user_agent", r.UserAgent()).
 				Int("status", ww.Status()).
 				Int("bytes", ww.BytesWritten()).
 				Dur("duration", time.Since(start)).
