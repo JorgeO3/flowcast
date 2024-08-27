@@ -151,9 +151,11 @@ func NewError(code ErrorCode, message string) Error {
 
 // FromMongoCommandError creates a new Error from a mongo.CommandError.
 func FromMongoCommandError(err mongo.CommandError) Error {
+	code := strconv.Itoa(int(err.Code))
+	msg := err.Message
 	return Error{
-		Code:    ErrorCode(err.Code),
-		Message: fmt.Sprintf("MongoDB command error - Code: %d - Type: %s", err.Code, err.Name),
+		Code:    ErrorCode(code),
+		Message: fmt.Sprintf("MongoDB command error - Code: %s - Type: %s", code, msg),
 	}
 }
 

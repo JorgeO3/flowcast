@@ -179,6 +179,30 @@ func (e TooManyRequests) Code() int { return http.StatusTooManyRequests }
 // Msg returns a human-readable error message for too many requests errors.
 func (e TooManyRequests) Msg() string { return "Too Many Requests" }
 
+// FIXME: This is a temporary solution until we have a better error handling strategy.
+// Check this
+// func mapMongoErrorToHTTPStatus(err error) int {
+//     if mongoErr, ok := err.(mongo.WriteException); ok {
+//         for _, we := range mongoErr.WriteErrors {
+//             switch we.Code {
+//             case 11000:
+//                 return http.StatusConflict // 409
+//             case 50, 51:
+//                 return http.StatusGatewayTimeout // 504
+//             case 13:
+//                 return http.StatusForbidden // 403
+//             default:
+//                 if we.Code >= 0 && we.Code <= 49 {
+//                     return http.StatusBadRequest // 400
+//                 } else if we.Code >= 10000 && we.Code < 11000 {
+//                     return http.StatusInternalServerError // 500
+//                 }
+//             }
+//         }
+//     }
+//     return http.StatusInternalServerError // 500 por defecto
+// }
+
 // HandleRepoError returns a CatalogError based on the error received from the repository.
 func HandleRepoError(e error) error {
 	if err, ok := e.(mongodb.Error); ok {
