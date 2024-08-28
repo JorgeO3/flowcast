@@ -1,3 +1,4 @@
+// Package http provides the HTTP Controller for the catalog service.
 package http
 
 import (
@@ -20,6 +21,13 @@ func WithCreateActUC(uc *usecase.CreateActUC) Opts {
 func WithUpdateActUC(uc *usecase.UpdateActUC) Opts {
 	return func(c *Controller) {
 		c.UpdateActUC = uc
+	}
+}
+
+// WithGetActByIDUC sets the GetActByIDUC in the controller.
+func WithGetActByIDUC(uc *usecase.GetActByIDUC) Opts {
+	return func(c *Controller) {
+		c.GetActByIDUC = uc
 	}
 }
 

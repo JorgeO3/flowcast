@@ -73,7 +73,7 @@ func NewUpdateAct(opts ...UpdateActUCOpts) *UpdateActUC {
 	return uc
 }
 
-// Execute updates an act in the catalog.
+// Execute perform the UpdateAct use case.
 func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*UpdateActOutput, error) {
 	uc.Logger.Info("Updating act in the catalog")
 

@@ -47,11 +47,18 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithUpdateActRepository(actRepo),
 	)
 
+	getActByIDUC := uc.NewGetActByID(
+		uc.WithGetAcByIDLogger(logg),
+		uc.WithGetAcByIDValidator(val),
+		uc.WithGetAcByIDRepository(actRepo),
+	)
+
 	controller := c.New(
 		c.WithConfig(cfg),
 		c.WithLogger(logg),
 		c.WithCreateActUC(createActUC),
 		c.WithUpdateActUC(updateActUC),
+		c.WithGetActByIDUC(getActByIDUC),
 	)
 
 	// Create a new router using the chi library.
@@ -70,6 +77,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	// Set up routes for the router.
 	r.Post("/act", controller.CreateAct)
 	r.Put("/act", controller.UpdateAct)
+	r.Get("/act", controller.GetActByID)
 
 	// Construct the server address using the host and port specified in the configuration.
 	addr := fmt.Sprintf("%s:%s", cfg.HTTPHost, cfg.HTTPPort)
