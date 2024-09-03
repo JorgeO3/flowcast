@@ -47,6 +47,17 @@ func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) err
 	return nil
 }
 
+// GetActByID implements ActRepository.
+func (m *MongoActRepository) GetActByID(ctx context.Context, id primitive.ObjectID) (*entity.Act, error) {
+	var act entity.Act
+	filter := bson.M{"_id": id}
+	err := m.collection.FindOne(ctx, filter).Decode(&act)
+	if err != nil {
+		return nil, mongodb.MapError(err)
+	}
+	return &act, nil
+}
+
 // CreateManyActs implements ActRepository.
 func (m *MongoActRepository) CreateManyActs(context.Context, []*entity.Act) error {
 	panic("unimplemented")
@@ -59,11 +70,6 @@ func (m *MongoActRepository) DeleteAct(context.Context, primitive.ObjectID) erro
 
 // DeleteManyActs implements ActRepository.
 func (m *MongoActRepository) DeleteManyActs(context.Context, primitive.M) error {
-	panic("unimplemented")
-}
-
-// GetActByID implements ActRepository.
-func (m *MongoActRepository) GetActByID(context.Context, primitive.ObjectID) (*entity.Act, error) {
 	panic("unimplemented")
 }
 

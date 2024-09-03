@@ -52,7 +52,7 @@ func WithGetAcByIDValidator(val validator.Validator) GetActByIDOpts {
 	}
 }
 
-// NewGetActByIDUC is the constructor for GetActByIDUC uscase
+// NewGetActByID is the constructor for GetActByIDUC uscase
 func NewGetActByID(opts ...GetActByIDOpts) *GetActByIDUC {
 	uc := &GetActByIDUC{}
 	for _, opt := range opts {
