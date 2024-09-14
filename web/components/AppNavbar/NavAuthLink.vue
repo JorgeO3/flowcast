@@ -1,16 +1,17 @@
 <script lang="ts" setup>
-import { UserIcon } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
-
+import { UserIcon } from "lucide-vue-next";
 defineProps<{ to: string }>();
+
+const linkClass = `
+  text-muted-foreground hover:text-foreground
+  transition-colors ease-in-out text-sm font-semibold flex items-center
+`;
 </script>
 
 <template>
-  <Button variant="ghost" as-child>
-    <NuxtLink :to class="flex font-semibold text-sm">
-      <slot>
-        <UserIcon class="w-4 h-4 mr-2" /> Login
-      </slot>
-    </NuxtLink>
-  </Button>
+  <NuxtLink :to class="flex font-semibold text-sm">
+    <slot>
+      <div :class="linkClass"><UserIcon class="w-4 h-4 mr-2" /> Login</div>
+    </slot>
+  </NuxtLink>
 </template>

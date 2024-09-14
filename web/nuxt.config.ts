@@ -7,11 +7,8 @@ export default defineNuxtConfig({
     "@nuxtjs/color-mode",
     "@nuxt/fonts",
     "@nuxt/image",
+    "nuxt-delay-hydration",
   ],
-  fonts: {
-    // TODO: Optimize fonts with fontsquirrel [https://www.fontsquirrel.com/tools/webfont-generator]
-    families: [{ name: 'Inter', provider: 'google', weights: [400, 700, 800], styles: ['normal'] }],
-  },
   shadcn: {
     prefix: '',
     componentDir: './components/ui'
@@ -19,8 +16,31 @@ export default defineNuxtConfig({
   colorMode: {
     classSuffix: ''
   },
-  image: {
-    format: ['avif'],
-    quality: 80,
+  fonts: {
+    families: [{ name: 'Inter', provider: 'bunny', weights: [400, 500, 700], subsets: ['latin'] }],
+  },
+  devtools: {
+    timeline: {
+      enabled: true
+    }
+  },
+  routeRules: {
+    '/': { static: true, prerender: true },
+    '/auth/login': { static: true, prerender: true },
+    '/auth/register': { static: true, prerender: true },
+  },
+  delayHydration: {
+    debug: process.env.NODE_ENV === 'development',
+    mode: 'mount',
+  },
+  nitro: {
+    compressPublicAssets: true,
+    prerender: {
+      crawlLinks: true,
+    }
+    
+  },
+  experimental: {
+    componentIslands: true,
   },
 })

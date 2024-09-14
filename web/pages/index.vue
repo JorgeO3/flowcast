@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { MoveUpRightIcon } from 'lucide-vue-next';
+import { MoveUpRightIcon } from "lucide-vue-next";
 </script>
 
 <template>
-  <main class="flex flex-col w-full min-h-screen overflow-y-scroll antialiased">
-
+  <main class="flex flex-col w-full min-h-screen antialiased">
     <section class="flex w-full justify-center items-stretch min-h-screen">
       <div class="flex justify-center items-center w-1/2 p-8">
         <div class="w-full max-w-xl space-y-8">
@@ -12,19 +11,19 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
             Discover a World of Music with Flowcast
           </h1>
           <p class="text-sm md:text-base">
-            Welcome to Flowcast, where music comes alive. Experience a universe of
-            endless tunes, handpicked playlists, and personalized recommendations
-            just for you.
+            Welcome to Flowcast, where music comes alive. Experience a universe
+            of endless tunes, handpicked playlists, and personalized
+            recommendations just for you.
           </p>
           <NuxtLink to="/"
             class="inline-flex items-center font-semibold text-sm border border-primary py-2 pl-4 pr-3 rounded-full transition hover:bg-primary hover:text-primary-foreground cursor-pointer">
             DOWNLOAD THE APP
             <div class="bg-primary rounded-full ml-1 w-8 h-8 flex items-center justify-center">
-              <MoveUpRightIcon :size="24" color="black" />
+              <MoveUpRightIcon class="text-black" />
             </div>
           </NuxtLink>
           <div class="flex items-center space-x-4">
-            <NuxtImg src="/users.png" alt="Users" format="webp" quality="70" />
+            <NuxtImg src="/users.png" alt="Users" quality="70" />
             <div>
               <p class="font-bold">2 million+</p>
               <p class="text-sm">Flowcast users worldwide</p>
@@ -35,28 +34,29 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
 
       <div class="visual-container w-1/2">
         <div class="logo-wrapper">
-          <NuxtImg class="logo" src="/logo.png" alt="Logo" width="450" quality="30" format="webp" />
+          <NuxtImg class="logo" src="/logo.png" alt="Logo" width="450" quality="10" />
         </div>
         <div class="phone-wrapper">
-          <NuxtImg class="phone" src="/phone.png" alt="Phone" width="550" format="webp" />
+          <NuxtImg class="phone" src="/phone.png" alt="Phone" width="550" format="webp" preload quality="40" />
         </div>
       </div>
     </section>
 
     <section class="flex flex-col items-center py-28 gap-16">
       <h1 class="text-5xl font-extrabold">Scan To Download Flowcast App</h1>
-      <NuxtImg class="m" src="/qr-phone.png" alt="phone with qr" width="400" format="webp" />
+      <NuxtImg src="/qr-phone.png" alt="phone with qr" width="400" format="avif" />
     </section>
 
     <section class="flex flex-col items-center container py-28 text-center gap-10">
-      <h1 class="text-5xl font-extrabold ">
+      <h1 class="text-5xl font-extrabold">
         Transform your music experience with
-        <br>
+        <br />
         Flowcast
       </h1>
 
       <p>
-        Access a vast catalog of music without paying a penny. Flowcast offers you continuous playback, personalized
+        Access a vast catalog of music without paying a penny. Flowcast offers
+        you continuous playback, personalized
         <br />
         playlists and much more, all for free.
       </p>
@@ -67,17 +67,21 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
             <NuxtImg src="/adds-free.png" alt="adds free" format="webp" />
           </div>
           <div>
-            <h1 class="font-semibold text-lg pb-1">Add-free music listenning</h1>
+            <h1 class="font-semibold text-lg pb-1">
+              Add-free music listenning
+            </h1>
             <small class="font-medium">Enjoy uninterrupted music</small>
           </div>
         </div>
 
         <div class="flex flex-col items-center gap-14">
           <div class="h-16 w-16 flex justify-center items-center">
-            <NuxtImg src="/offline.png" alt="adds free" format="webp" />
+            <NuxtImg src="/offline.png" alt="adds free" format="webp" quality="60" />
           </div>
           <div>
-            <h1 class="font-semibold text-lg pb-1">Add-free music listenning</h1>
+            <h1 class="font-semibold text-lg pb-1">
+              Add-free music listenning
+            </h1>
             <small class="font-medium">Enjoy uninterrupted music</small>
           </div>
         </div>
@@ -87,17 +91,21 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
             <NuxtImg src="/play.png" alt="adds free" format="webp" />
           </div>
           <div>
-            <h1 class="font-semibold text-lg pb-1">Add-free music listenning</h1>
+            <h1 class="font-semibold text-lg pb-1">
+              Add-free music listenning
+            </h1>
             <small class="font-medium">Enjoy uninterrupted music</small>
           </div>
         </div>
 
         <div class="flex flex-col items-center gap-14">
           <div class="h-16 w-16 flex justify-center items-center">
-            <NuxtImg src="/adds-free.png" alt="adds free" format="webp" />
+            <NuxtImg src="/pay.png" alt="adds free" format="webp" sizes="" />
           </div>
           <div>
-            <h1 class="font-semibold text-lg pb-1">Add-free music listenning</h1>
+            <h1 class="font-semibold text-lg pb-1">
+              Add-free music listenning
+            </h1>
             <small class="font-medium">Enjoy uninterrupted music</small>
           </div>
         </div>
@@ -105,7 +113,6 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
     </section>
   </main>
 </template>
-
 
 <style scoped>
 .visual-container {
@@ -120,7 +127,7 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
 }
 
 .visual-container::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -157,6 +164,5 @@ import { MoveUpRightIcon } from 'lucide-vue-next';
 .phone {
   max-width: 100%;
   height: auto;
-  transform: translateY(18%);
 }
 </style>

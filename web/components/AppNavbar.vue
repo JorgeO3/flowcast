@@ -8,6 +8,7 @@ const navLinks = ref([
   { name: "Discover", path: "/discover" },
   { name: "About", path: "/about" },
   { name: "Blog", path: "/blog" },
+  { name: "Play", path: "/play" },
 ]);
 
 const { y } = useScroll();
@@ -15,11 +16,15 @@ const { y } = useScroll();
 const HEADER_CLASSES = {
   base: "transition-all duration-300 w-full flex fixed z-10 top-0 bg-transparent",
   expanded: "py-8",
-  shrunk: "py-2 border-b backdrop-blur bg-background/95 supports-[backdrop-filter]:bg-background/60"
+  shrunk:
+    "py-2 border-b backdrop-blur bg-background/95 supports-[backdrop-filter]:bg-background/60",
 };
 
-const headerClasses = computed(() =>
-  `${HEADER_CLASSES.base} ${y.value ? HEADER_CLASSES.shrunk : HEADER_CLASSES.expanded}`
+const headerClasses = computed(
+  () =>
+    `${HEADER_CLASSES.base} ${
+      y.value ? HEADER_CLASSES.shrunk : HEADER_CLASSES.expanded
+    }`
 );
 </script>
 
