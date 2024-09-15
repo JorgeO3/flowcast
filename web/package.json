@@ -13,6 +13,7 @@
     "all": "yarn generate && yarn prev"
   },
   "dependencies": {
+    "@nuxt/eslint": "^0.5.7",
     "@nuxt/fonts": "^0.7.2",
     "@nuxt/image": "^1.8.0",
     "@nuxtjs/critters": "^0.7.2",

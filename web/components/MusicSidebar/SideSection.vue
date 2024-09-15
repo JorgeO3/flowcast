@@ -16,7 +16,7 @@ defineProps<{ section?: SidebarSection }>();
 </script>
 
 <template>
-  <div v-if="section" :class="[$attrs.class ? $attrs.class : 'px-3 py-2']">
+  <div v-if="section" :class="[$attrs.class || 'px-3 py-2']">
 
     <!-- Header -->
     <slot name="header" :title="section.title">
@@ -28,9 +28,7 @@ defineProps<{ section?: SidebarSection }>();
     <!-- Content -->
     <slot name="content" :items="section.items">
       <div class="space-y-1">
-        <template v-for="(item, i) in section.items" :key="`${item}-${i}`">
-          <SideLink :playlist="item" />
-        </template>
+        <SideLink v-for="item in section.items" :key="item.path" :playlist="item" />
       </div>
     </slot>
 
