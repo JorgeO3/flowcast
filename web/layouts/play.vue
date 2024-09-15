@@ -3,7 +3,7 @@
     <div class="flex h-[92%]">
 
       <!-- Sidebar -->
-      <div class="w-52 h-full">
+      <div class="w-64 h-full">
         <MusicSidebar />
       </div>
 

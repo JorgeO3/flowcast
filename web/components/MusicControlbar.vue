@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="w-full h-full bg-red-700">
+  <div class="w-full h-full border-t">
     Music Control Bar
   </div>
 </template>
