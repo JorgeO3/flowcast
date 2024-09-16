@@ -26,8 +26,8 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/': { static: true, prerender: true },
-    '/auth/login': { static: true, prerender: true },
-    '/auth/register': { static: true, prerender: true },
+    '/auth/**': { static: true, prerender: true },
+    '/play/**': { prerender: true },
   },
   delayHydration: {
     debug: process.env.NODE_ENV === 'development',
@@ -43,4 +43,11 @@ export default defineNuxtConfig({
   experimental: {
     componentIslands: true,
   },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+      ],
+    }
+  }
 })
