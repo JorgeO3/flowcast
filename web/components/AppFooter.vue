@@ -57,7 +57,6 @@ const legalLinks = [
   <footer class="bg-black text-white py-12 px-6 md:px-12 lg:px-24">
     <div class="max-w-7xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-
         <!-- Logo -->
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           <p class="font-bold text-2xl">FlowCast</p>
@@ -80,21 +79,33 @@ const legalLinks = [
         <!-- Social Media Icons -->
         <div>
           <div class="flex space-x-4">
-            <NuxtLink v-for="(social, index) in socialLinks" :key="index" :to="social.to" :aria-label="social.ariaLabel"
-              class="h-11 w-11 rounded-full flex justify-center items-center hover:bg-white hover:text-black transition-all ease-in-out">
+            <NuxtLink
+              v-for="(social, index) in socialLinks"
+              :key="index"
+              :to="social.to"
+              :aria-label="social.ariaLabel"
+              class="h-11 w-11 rounded-full flex justify-center items-center hover:bg-white hover:text-black transition-all ease-in-out"
+            >
               <component :is="social.icon" class="w-5 h-5" />
             </NuxtLink>
           </div>
         </div>
-
       </div>
 
       <!-- Bottom Section -->
-      <div class="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+      <div
+        class="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center"
+      >
         <!-- Legal Links -->
-        <div class="flex flex-wrap justify-center md:justify-start gap-4 mb-4 md:mb-0">
-          <NuxtLink v-for="(legal, index) in legalLinks" :key="index" :to="legal.to"
-            class="text-gray-300 hover:text-white text-sm">
+        <div
+          class="flex flex-wrap justify-center md:justify-start gap-4 mb-4 md:mb-0"
+        >
+          <NuxtLink
+            v-for="(legal, index) in legalLinks"
+            :key="index"
+            :to="legal.to"
+            class="text-gray-300 hover:text-white text-sm"
+          >
             {{ legal.text }}
           </NuxtLink>
         </div>
