@@ -13,7 +13,6 @@
     "all": "yarn generate && yarn prev"
   },
   "dependencies": {
-    "@nuxt/eslint": "^0.5.7",
     "@nuxt/fonts": "^0.7.2",
     "@nuxt/image": "^1.8.0",
     "@nuxtjs/critters": "^0.7.2",
@@ -22,12 +21,12 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.419.0",
-    "nuxt": "^3.13.1",
+    "nuxt": "^3.13.2",
     "radix-vue": "^1.9.2",
     "shadcn-nuxt": "^0.10.4",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "vue": "^3.5.5"
+    "vue": "^3.5.6"
   },
   "devDependencies": {
     "@nuxtjs/color-mode": "^3.4.2",

@@ -8,7 +8,6 @@ export default defineNuxtConfig({
     "@nuxt/fonts",
     "@nuxt/image",
     "nuxt-delay-hydration",
-    '@nuxt/eslint',
   ],
   shadcn: {
     prefix: '',
