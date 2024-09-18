@@ -6,6 +6,7 @@ const useIdFunction = () => useId() || "";
 </script>
 
 <template>
+  <!-- @vue-ignore -->
   <ConfigProvider :use-id="useIdFunction">
     <NuxtLayout>
       <NuxtPage />
