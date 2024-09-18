@@ -25,11 +25,6 @@ const data: SidebarSection[] = [
     items: [
       { icon: lucide.ListMusic, text: "Playlists", path: "/play/playlists" },
       { icon: lucide.Music2Icon, text: "Songs", path: "/play/songs" },
-      {
-        icon: lucide.UserIcon,
-        text: "Made for You",
-        path: "/play/made-for-you",
-      },
       { icon: lucide.MicVocalIcon, text: "Artists", path: "/play/artists" },
       { icon: lucide.LibraryBigIcon, text: "Albums", path: "/play/albums" },
     ],
@@ -56,6 +51,4 @@ const data: SidebarSection[] = [
   },
 ];
 
-export const sectionsMusicSidebar = (): SidebarSection[] => {
-  return data;
-};
+export const sectionsMusicSidebar = (): SidebarSection[] => data;
