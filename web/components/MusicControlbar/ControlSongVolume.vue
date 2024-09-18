@@ -14,7 +14,7 @@ const toggleMute = () => (isMuted.value = !isMuted.value);
 <template>
   <div class="flex items-center space-x-4">
     <button
-      class="p-3 rounded-full transition-all text-foreground"
+      class="p-3 rounded-full transition-all text-foreground hover:text-foreground/60"
       @click="toggleMute"
     >
       <VolumeXIcon v-if="isMuted" class="w-5 h-5" />

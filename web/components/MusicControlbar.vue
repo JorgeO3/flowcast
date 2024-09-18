@@ -6,7 +6,7 @@ import ControlSongVolume from "@/components/MusicControlbar/ControlSongVolume.vu
 
 <template>
   <div
-    class="flex w-full h-full border-t items-center justify-between px-2 py-1"
+    class="flex w-full h-full border-t items-center justify-between px-2 py-1 bg-background"
   >
     <ControlSongInfo />
     <ControlSongPlayback />
