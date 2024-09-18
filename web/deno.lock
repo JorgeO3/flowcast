@@ -1,0 +1,40 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "npm:@faker-js/faker": "npm:@faker-js/faker@8.4.1"
+    },
+    "npm": {
+      "@faker-js/faker@8.4.1": {
+        "integrity": "sha512-XQ3cU+Q8Uqmrbf2e0cIC/QN43sTBSC8KF12u29Mb47tWrt2hAgBXSgpZMj4Ao8Uk0iJcU99QsOCaIL8934obCg==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@nuxt/fonts@^0.7.2",
+        "npm:@nuxt/image@^1.8.0",
+        "npm:@nuxtjs/color-mode@^3.4.2",
+        "npm:@nuxtjs/critters@^0.7.2",
+        "npm:@nuxtjs/tailwindcss@^6.12.1",
+        "npm:@vueuse/core@^11.0.3",
+        "npm:class-variance-authority@^0.7.0",
+        "npm:clsx@^2.1.1",
+        "npm:lucide-vue-next@^0.419.0",
+        "npm:nuxt-delay-hydration@^1.3.8",
+        "npm:nuxt@^3.13.2",
+        "npm:radix-vue@^1.9.2",
+        "npm:rollup-plugin-visualizer@^5.12.0",
+        "npm:shadcn-nuxt@^0.10.4",
+        "npm:tailwind-merge@^2.4.0",
+        "npm:tailwindcss-animate@^1.0.7",
+        "npm:typescript@^5.5.4",
+        "npm:vite-plugin-bundle-analyzer@^0.0.1",
+        "npm:vue@^3.5.6"
+      ]
+    }
+  }
+}
