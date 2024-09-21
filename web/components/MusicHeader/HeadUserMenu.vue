@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
     <DropdownMenuTrigger as-child>
       <Button variant="secondary" size="icon" class="rounded-full">
         <Avatar>
-          <AvatarFallback>CN</AvatarFallback>
+          <AvatarFallback><strong>CN</strong></AvatarFallback>
         </Avatar>
       </Button>
     </DropdownMenuTrigger>
