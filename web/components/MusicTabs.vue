@@ -1,55 +1,27 @@
 <script lang="ts" setup>
+import type { Tab } from "@/utils/tabTypes.js";
 import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
-import TabAll from "./MusicTabs/TabAll.vue";
-import TabMusic from "./MusicTabs/TabMusic.vue";
-import TabPodcasts from "./MusicTabs/TabPodcasts.vue";
-import type { Component } from "vue";
 
-interface Tab {
-  name: string;
-  value: string;
-  component: Component;
-}
-
-const tabs: Tab[] = [
-  { name: "All", value: "all", component: TabAll },
-  { name: "Music", value: "music", component: TabMusic },
-  { name: "Podcasts", value: "podcasts", component: TabPodcasts },
-];
+defineProps<{ tabs: Tab[] }>();
 </script>
 
 <template>
-  <Tabs default-value="all" class="h-full space-y-6">
-    <TabsList>
-      <TabsTrigger v-for="tab in tabs" :key="tab.value" :value="tab.value">
-        {{ tab.name }}
-      </TabsTrigger>
-    </TabsList>
+  <Tabs default-value="all" class="flex flex-col h-full">
+    <div class="w-full px-4">
+      <TabsList class="w-fit">
+        <TabsTrigger v-for="tab in tabs" :key="tab.value" :value="tab.value">
+          {{ tab.name }}
+        </TabsTrigger>
+      </TabsList>
+    </div>
 
-    <TabsContent v-for="tab in tabs" :key="tab.value" :value="tab.value">
-      <component :is="tab.component" />
+    <TabsContent
+      class="flex-grow overflow-hidden py-4"
+      v-for="tab in tabs"
+      :key="tab.value"
+      :value="tab.value"
+    >
+      <component :is="tab.component" class="h-full w-full" />
     </TabsContent>
   </Tabs>
 </template>
-
-<!-- <template>
-  <Tabs default-value="all" class="h-full space-y-6">
-    <TabsList>
-      <TabsTrigger value="all">All</TabsTrigger>
-      <TabsTrigger value="music">Music</TabsTrigger>
-      <TabsTrigger value="podcasts">Podcasts</TabsTrigger>
-    </TabsList>
-
-    <TabsContent value="all">
-      <h1>All</h1>
-    </TabsContent>
-
-    <TabsContent value="music">
-      <h2>Music</h2>
-    </TabsContent>
-
-    <TabsContent value="podcasts">
-      <h2>Podcasts</h2>
-    </TabsContent>
-  </Tabs>
-</template> -->
