@@ -1,19 +1,23 @@
 <template>
   <div class="flex flex-col h-screen">
-    <div class="flex h-[92%]">
-
-      <!-- Sidebar -->
-      <div class="w-64 h-full">
+    <!-- Área Principal: Sidebar y Contenido Principal -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar Izquierdo -->
+      <div class="w-64 flex-shrink-0 hidden md:block">
         <MusicSidebar />
       </div>
 
-      <!-- Main Content -->
-      <div class="w-full">
+      <!-- Contenido Principal -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Slot para insertar contenido específico de la página -->
+        <MusicHeader />
         <slot />
       </div>
     </div>
 
     <!-- Music Control Bar -->
-    <MusicControlbar />
+    <div class="h-20 flex-shrink-0">
+      <MusicControlbar />
+    </div>
   </div>
 </template>
