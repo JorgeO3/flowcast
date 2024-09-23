@@ -2,7 +2,11 @@
 import { Search } from "lucide-vue-next";
 
 const router = useRouter();
-const search = useState("searchValue", () => "");
+const search = useState("search", () => "");
+
+const handleFocus = () => {
+  router.push("/play/browse");
+};
 </script>
 
 <template>
@@ -12,6 +16,7 @@ const search = useState("searchValue", () => "");
       <Input
         type="search"
         v-model="search"
+        @focusin="handleFocus"
         placeholder="What do you want to play?"
         class="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
       />

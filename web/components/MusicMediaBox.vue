@@ -5,7 +5,7 @@ import BoxMenuAct from "./MusicMediaBox/BoxMenuAct.vue";
 import BoxDetails from "./MusicMediaBox/BoxDetails.vue";
 import BoxMenuAlbum from "./MusicMediaBox/BoxMenuAlbum.vue";
 
-interface Props extends MediaContent {}
+type Props = MediaContent;
 const { type, link } = defineProps<Props>();
 
 const boxClasses = `

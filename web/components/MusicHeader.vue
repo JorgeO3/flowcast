@@ -10,6 +10,8 @@ import HeadUserMenu from "./MusicHeader/HeadUserMenu.vue";
     <div
       class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4 justify-end"
     >
+      <MusicInputSearch />
+
       <!-- Home button -->
       <Button as-child variant="secondary" size="icon" class="rounded-full">
         <NuxtLink to="/play" class="text-foreground">

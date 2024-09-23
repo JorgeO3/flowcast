@@ -1,14 +1,25 @@
 <script lang="ts" setup>
 import { Separator } from "@/components/ui/separator";
-import type { Section, MediaContent } from "~/utils/tabAllSections.js";
+import type { Section, MediaContent } from "@/utils/sectionTypes";
+
 import SectionHeader from "./MusicSection/SectionHeader.vue";
+import SectionActContent from "./MusicSection/SectionActContent.vue";
+import SectionSongContent from "./MusicSection/SectionSongContent.vue";
+import SectionAlbumContent from "./MusicSection/SectionAlbumContent.vue";
+import SectionRadioContent from "./MusicSection/SectionRadioContent.vue";
+import SectionPodcastContent from "./MusicSection/SectionPodcastContent.vue";
+import SectionPlaylistContent from "./MusicSection/SectionPlaylistContent.vue";
 
 interface Props extends Section {}
-
 defineProps<Props>();
 
-const sliceBoxes = (boxes: MediaContent[]) => {
-  return boxes.slice(0, 5);
+const contentMap: Record<MediaContent["contentType"], Component> = {
+  act: SectionActContent,
+  song: SectionSongContent,
+  album: SectionAlbumContent,
+  radio: SectionRadioContent,
+  podcast: SectionPodcastContent,
+  playlist: SectionPlaylistContent,
 };
 </script>
 
@@ -19,12 +30,9 @@ const sliceBoxes = (boxes: MediaContent[]) => {
 
     <Separator class="my-4" />
 
-    <div class="flex justify-around h-72">
-      <MusicMediaBox
-        v-for="box in sliceBoxes(boxes)"
-        :key="box.title"
-        :="box"
-      />
-    </div>
+    <!-- Content -->
+    <template v-for="item in content" :key="item.id">
+      <component :is="contentMap[item.contentType]" :="item" />
+    </template>
   </div>
 </template>
