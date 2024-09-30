@@ -45,7 +45,7 @@ function validateFlags(args: Args, flags: CommandFlags): void {
 }
 
 function getLongFlag(rawFlag: string, allFlags: Flag[]): string {
-  const formattedFlag = allFlags.find(({ flag }) => flag.includes(rawFlag));
+  const formattedFlag = allFlags.find(({ short, long }) => short === rawFlag || long === rawFlag);
   if (!formattedFlag) {
     throw new Error(`Flag ${rawFlag} not found`);
   }
@@ -67,8 +67,6 @@ function main(): void {
   const command = COMMANDS.get(commandName);
 
   console.log({ parsedArgs });
-
-
 
   if (commandName === "help" || parsedArgs.help || parsedArgs.h || !command) {
     return showGeneralHelp();
