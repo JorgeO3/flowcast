@@ -31,6 +31,26 @@ func WithGetActByIDUC(uc *usecase.GetActByIDUC) Opts {
 	}
 }
 
+// WithDeleteActUC sets the DeleteActUC in the controller.
+func WithDeleteActUC(uc *usecase.DeleteActUC) Opts {
+	return func(c *Controller) {
+		c.DeleteActUC = uc
+	}
+}
+
+func WithGetActsUC(uc *usecase.GetActsUC) Opts {
+	return func(c *Controller) {
+		c.GetActsUC = uc
+	}
+}
+
+// WithCreateManyUC sets the CreateManyUC in the controller.
+func WithCreateManyUC(uc *usecase.CreateManyUC) Opts {
+	return func(c *Controller) {
+		c.CreateManyUC = uc
+	}
+}
+
 // WithLogger sets the logger in the controller.
 func WithLogger(l logger.Interface) Opts {
 	return func(c *Controller) {

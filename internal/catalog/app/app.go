@@ -24,7 +24,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 
 	mg, err := mongodb.New(cfg.DatabaseURL)
 	if err != nil {
-		logg.Fatal("mongo connection error: %w", err)
+		logg.Fatal("mongo connection error: %v", err)
 	}
 	defer mg.Close()
 
@@ -53,12 +53,33 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithGetAcByIDRepository(actRepo),
 	)
 
+	deleteActUC := uc.NewDeleteAct(
+		uc.WithDeleteActLogger(logg),
+		uc.WithDeleteActValidator(val),
+		uc.WithDeleteActRepository(actRepo),
+	)
+
+	createManyUC := uc.NewCreateMany(
+		uc.WithCreateManyLogger(logg),
+		uc.WithCreateManyValidator(val),
+		uc.WithCreateManyRepository(actRepo),
+	)
+
+	getActsUC := uc.NewGetActs(
+		uc.WithGetActsLogger(logg),
+		uc.WithGetActsValidator(val),
+		uc.WithGetActsRepository(actRepo),
+	)
+
 	controller := c.New(
 		c.WithConfig(cfg),
 		c.WithLogger(logg),
+		c.WithGetActsUC(getActsUC),
 		c.WithCreateActUC(createActUC),
 		c.WithUpdateActUC(updateActUC),
+		c.WithDeleteActUC(deleteActUC),
 		c.WithGetActByIDUC(getActByIDUC),
+		c.WithCreateManyUC(createManyUC),
 	)
 
 	// Create a new router using the chi library.
@@ -70,14 +91,17 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	r.Use(logger.ZerologMiddleware(logg))       // Custom middleware to log HTTP requests with zerolog.
 	r.Use(middleware.Recoverer)                 // Middleware to recover from panics and send an appropriate error response.
 	r.Use(middleware.Heartbeat("/"))            // Middleware to provide a healthcheck endpoint at the root path.
-	r.Use(middleware.RequestSize(1024 * 100))   // Middleware to limit the maximum request size to 100 KB.
+	r.Use(middleware.RequestSize(1024 * 1024))  // Middleware to limit the maximum request size to 1 MB.
 	r.Use(middleware.Timeout(60 * time.Second)) // Middleware to set a timeout of 60 seconds for each request.
 	r.Use(logger.ErrorHandlingMiddleware(logg)) // Custom middleware to handle server errors.
 
 	// Set up routes for the router.
-	r.Post("/act", controller.CreateAct)
-	r.Put("/act", controller.UpdateAct)
-	r.Get("/act", controller.GetActByID)
+	r.Get("/acts", controller.GetActs)
+	r.Post("/acts", controller.CreateAct)
+	r.Get("/acts/{id}", controller.GetAct)
+	r.Put("/acts/{id}", controller.UpdateAct)
+	r.Delete("/acts/{id}", controller.DeleteAct)
+	r.Post("/acts/bulk", controller.CreateMany)
 
 	// Construct the server address using the host and port specified in the configuration.
 	addr := fmt.Sprintf("%s:%s", cfg.HTTPHost, cfg.HTTPPort)

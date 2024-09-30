@@ -30,7 +30,7 @@ function generateAudioFeatures() {
         acousticness: faker.number.float({ min: 0, max: 1 }),
         instrumentalness: faker.number.float({ min: 0, max: 1 }),
         liveness: faker.number.float({ min: 0, max: 1 }),
-        valance: faker.number.float({ min: 0, max: 1 }),
+        velence: faker.number.float({ min: 0, max: 1 }),
     };
 }
 

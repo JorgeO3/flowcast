@@ -1,4 +1,4 @@
-import { bold, rgb8 } from "@std/fmt/colors";
+import { bold, rgb8, underline } from "@std/fmt/colors";
 import { GENERATE_COMMAND, REQUEST_COMMAND } from "../commands/index.ts";
 import { Command } from "./types.ts";
 
@@ -6,21 +6,20 @@ import { Command } from "./types.ts";
 type ColorConfig = Record<string, number>;
 
 const DEFAULT_COLORS: ColorConfig = {
-  green: 118,
-  orange: 214,
-  yellow: 220,
-  blue: 39,
-  cyan: 45,
-  white: 252,
-  red: 196,
-  darkOrange: 208,
-  lightGreen: 83,
+  "grey": 15, // #FFFFFF
+  "white": 231, // #E5E5E5
+  "blue": 45, // #008DF8
+  "green": 82, // #8CE10B
+  "yellow": 214, // #FFB900
+  "red": 160, // #FF000F
+  "darkGray": 8, // #232323 (Referencial, no se aplica directamente)
 };
 
-// deno-fmt-ignore
 const createColorizer = (colors: ColorConfig) => ({
   colorize: (text: string, colorCode: keyof ColorConfig) => rgb8(text, colors[colorCode]),
   colorBold: (text: string, colorCode: keyof ColorConfig) => bold(rgb8(text, colors[colorCode])),
+  colorUnderline: (text: string, colorCode: keyof ColorConfig) =>
+    underline(rgb8(text, colors[colorCode])),
 });
 
 const colorizer = createColorizer(DEFAULT_COLORS);
@@ -33,18 +32,19 @@ const EXAMPLES: string[] = [
 
 // Funciones de formato personalizables
 const color = {
-  usage: () => colorizer.colorBold("Usage:", "green"),
-  commands: () => colorizer.colorBold("COMMANDS", "orange"),
-  description: () => colorizer.colorize("Perform API requests", "white"),
+  usage: () => colorizer.colorBold("Usage:", "blue"),
+  commands: () => colorizer.colorBold("COMMANDS", "blue"),
+  flags: () => colorizer.colorBold("FLAGS", "blue"),
+  description: (desc: string) => colorizer.colorize(desc, "grey"),
   optionFlag: (flag: string) => colorizer.colorize(flag, "yellow"),
-  actionsTitle: () => colorizer.colorBold("ACTIONS", "orange"),
+  optionTitle: (opt: string) => colorizer.colorBold(opt, "blue"),
   example: () => colorizer.colorBold("EXAMPLES", "blue"),
-  commandName: (name: string) => colorizer.colorize(name, "cyan"),
-  actionDescription: (desc: string) => colorizer.colorize(desc, "white"),
-  exampleCommand: (cmd: string) => colorizer.colorize(cmd, "lightGreen"),
-  required: () => colorizer.colorBold("required", "red"),
+  commandName: (name: string) => colorizer.colorBold(colorizer.colorize(name, "white"), "white"),
+  actionDescription: (desc: string) => colorizer.colorize(desc, "grey"),
+  exampleCommand: (cmd: string) => colorizer.colorize(cmd, "white"),
+  required: () => colorizer.colorBold("required", "white"),
   error: () => colorizer.colorBold("Error:", "red"),
-  errorCommand: (cmd: string) => colorizer.colorBold(cmd, "darkOrange"),
+  errorCommand: (cmd: string) => colorizer.colorBold(cmd, "red"),
 };
 
 // Función para resaltar "required" en descripciones
@@ -52,35 +52,34 @@ const highlightRequired = (description: string) =>
   description.replace("required", color.required());
 
 // Función para generar la ayuda de un comando
-const generateCommandHelp = ({ name, options, actions }: Command) => {
-  let helpMessage = `${
-    color.commandName(name)
-  }\n ${color.description()}\n ${color.commands()}\n`;
+const generateCommandHelp = ({ name, flags, options, description }: Command) => {
+  let helpMessage = `${color.commandName(name)}\n  ${
+    color.description(description)
+  }\n\n  ${color.flags()}\n`;
 
-  options.all.forEach(({ flag, description }) => {
-    helpMessage += ` ${color.optionFlag(flag)} ${
-      description.includes("required")
-        ? highlightRequired(description)
-        : description
+  flags.all.forEach(({ flag, description }) => {
+    helpMessage += `    ${color.optionFlag(flag)}  ${
+      description.includes("required") ? highlightRequired(description) : description
     }\n`;
   });
 
-  if (actions) {
-    helpMessage += ` ${color.actionsTitle()}\n`;
-    actions.forEach(({ name, description }) => {
-      helpMessage += ` ${color.commandName(name + ":")} ${
+  if (options) {
+    helpMessage += `\n  ${color.optionTitle(options.name)}\n`;
+    options.values.forEach(({ name, description }) => {
+      helpMessage += `    ${color.commandName(name + ":")} ${
         color.actionDescription(description)
       }\n`;
     });
   }
 
-  return helpMessage + "\n";
+  helpMessage += "\n";
+  return helpMessage;
 };
 
 // Función para generar el mensaje de ayuda general
 const generateHelpMessage = (commands: Command[], examples: string[]) => {
   let helpMessage =
-    `${color.usage()} deno run main.ts <command> [options]\n\n${color.commands()}\n\n`;
+    `${color.usage()} deno run main.ts <command> [options]\n\n${color.commands()}\n`;
 
   commands.forEach((command) => {
     helpMessage += generateCommandHelp(command);
@@ -88,15 +87,14 @@ const generateHelpMessage = (commands: Command[], examples: string[]) => {
 
   helpMessage += `${color.example()}\n`;
   examples.forEach((example) => {
-    helpMessage += ` ${color.exampleCommand(example)}\n`;
+    helpMessage += `  ${color.exampleCommand(example)}\n`;
   });
 
   return helpMessage;
 };
 
 // Función para mostrar la ayuda general
-export const showGeneralHelp = () =>
-  console.log(generateHelpMessage(COMMANDS, EXAMPLES));
+export const showGeneralHelp = () => console.log(generateHelpMessage(COMMANDS, EXAMPLES));
 
 // Función para mostrar errores crudos
 export const showRawError = (msg: string, command: string) =>
@@ -107,6 +105,7 @@ export const addCommand = (command: Command) => {
   COMMANDS.push(command);
 };
 
+// Función para establecer colores personalizados
 export const setCustomColors = (colors: Partial<ColorConfig>) => {
   Object.assign(DEFAULT_COLORS, colors);
 };

@@ -1,0 +1,1 @@
+ Se encarga de transmitir el flujo de audio, seleccionar la tasa de bits, mantener el estado de reproducción, autorizar el acceso al streaming y interactuar con la CDN.

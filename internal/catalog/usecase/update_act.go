@@ -88,5 +88,5 @@ func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*Upda
 	}
 
 	uc.Logger.Info("Act updated successfully")
-	return &UpdateActOutput{}, nil
+	return nil, nil
 }

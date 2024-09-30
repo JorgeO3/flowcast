@@ -3,10 +3,17 @@
     "dev": "deno run --watch main.ts"
   },
   "imports": {
+    "/": "./",
+    "./": "./",
     "@std/assert": "jsr:@std/assert@1",
-    "@std/fmt/colors": "jsr:@std/fmt/colors"
+    "@std/fmt": "jsr:@std/fmt@1.0.2",
+    "@std/cli": "jsr:@std/cli@1.0.6",
+    "faker": "npm:@faker-js/faker"
   },
   "compilerOptions": {
     "noImplicitReturns": true
+  },
+  "fmt": {
+    "lineWidth": 100
   }
 }

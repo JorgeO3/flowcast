@@ -1,8 +1,9 @@
-import { type Args, parseArgs } from "jsr:@std/cli/parse-args";
+import { type Args, parseArgs } from "@std/cli/parse-args";
 import { GENERATE_COMMAND, REQUEST_COMMAND } from "./commands/index.ts";
 import {
   type Command,
   type CommandFlags,
+  Flag,
   showGeneralHelp,
   showRawError,
 } from "./utils/index.ts";
@@ -28,16 +29,36 @@ function showErrorAndExit(message: string, details: string): never {
 function validateFlags(args: Args, flags: CommandFlags): void {
   const { required, all } = flags;
 
-  for (const { flag, flagType } of all) {
-    const value = args[flag];
-    if (!value) showErrorAndExit("Missing required flag", flag);
+  for (const { long, short, flagType, flag } of all) {
+    const value = args[short] || args[long];
+    if (!value) continue;
     // deno-lint-ignore valid-typeof
     if (typeof value !== flagType) showErrorAndExit("Invalid type", flag);
   }
 
-  required.forEach(({ flag }) => {
-    if (!args[flag]) showErrorAndExit("Missing required flag", flag);
-  });
+  // validate required fields
+  for (const { long, short, flag } of required) {
+    if (!args[short] && !args[long]) {
+      showErrorAndExit("Missing required flag", flag);
+    }
+  }
+}
+
+function getLongFlag(rawFlag: string, allFlags: Flag[]): string {
+  const formattedFlag = allFlags.find(({ flag }) => flag.includes(rawFlag));
+  if (!formattedFlag) {
+    throw new Error(`Flag ${rawFlag} not found`);
+  }
+  return formattedFlag.long;
+}
+
+function parseFlags(args: Args, { flags }: Command): Record<string, string | number | boolean> {
+  return Object.entries(args)
+    .filter(([key]) => key !== "_")
+    .reduce((acc, [key, value]) => {
+      acc[getLongFlag(key, flags.all)] = value;
+      return acc;
+    }, {} as Record<string, string | number | boolean>);
 }
 
 function main(): void {
@@ -45,7 +66,11 @@ function main(): void {
   const commandName = aliasToCommandName(parsedArgs._[0] as string);
   const command = COMMANDS.get(commandName);
 
-  if (commandName === "help" || parsedArgs.help || parsedArgs.h) {
+  console.log({ parsedArgs });
+
+
+
+  if (commandName === "help" || parsedArgs.help || parsedArgs.h || !command) {
     return showGeneralHelp();
   }
 
@@ -53,8 +78,10 @@ function main(): void {
     return showErrorAndExit("Command not found", commandName);
   }
 
-  validateFlags(parsedArgs, command.options);
-  command.run(parsedArgs);
+  validateFlags(parsedArgs, command.flags);
+  const args = parseFlags(parsedArgs, command);
+  console.log({ args });
+  command.run(args);
 }
 
 if (import.meta.main) {

@@ -12,7 +12,7 @@ type AudioFeatures struct {
 	Acousticness     float64 `json:"acousticness" bson:"acousticness,omitempty" validate:"required,min=0,max=1"`
 	Instrumentalness float64 `json:"instrumentalness" bson:"instrumentalness,omitempty" validate:"required,min=0,max=1"`
 	Liveness         float64 `json:"liveness" bson:"liveness,omitempty" validate:"required,min=0,max=1"`
-	Valance          float64 `json:"valance" bson:"valance,omitempty" validate:"required,min=0,max=1"`
+	Velence          float64 `json:"valence" bson:"valance,omitempty" validate:"required,min=0,max=1"`
 }
 
 // AudioFeaturesOption represent the functional options for the audio features entity
@@ -88,10 +88,10 @@ func WithAudioFeaturesLiveness(liveness float64) AudioFeaturesOption {
 	}
 }
 
-// WithAudioFeaturesValance set the valance of the audio features
-func WithAudioFeaturesValance(valance float64) AudioFeaturesOption {
+// WithAudioFeaturesVelence set the valance of the audio features
+func WithAudioFeaturesVelence(valance float64) AudioFeaturesOption {
 	return func(a *AudioFeatures) {
-		a.Valance = valance
+		a.Velence = valance
 	}
 }
 

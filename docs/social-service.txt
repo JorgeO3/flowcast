@@ -1,0 +1,1 @@
+Gestiona las relaciones de seguimiento entre usuarios, el feed de actividad, los comentarios en listas de reproducción, los perfiles de usuario y la autenticación con redes sociales.

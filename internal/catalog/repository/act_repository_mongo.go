@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/pkg/mongodb"
@@ -51,29 +52,68 @@ func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) err
 func (m *MongoActRepository) GetActByID(ctx context.Context, id primitive.ObjectID) (*entity.Act, error) {
 	var act entity.Act
 	filter := bson.M{"_id": id}
+
 	err := m.collection.FindOne(ctx, filter).Decode(&act)
 	if err != nil {
 		return nil, mongodb.MapError(err)
 	}
+
 	return &act, nil
 }
 
 // CreateManyActs implements ActRepository.
-func (m *MongoActRepository) CreateManyActs(context.Context, []*entity.Act) error {
-	panic("unimplemented")
+func (m *MongoActRepository) CreateManyActs(ctx context.Context, acts []*entity.Act) ([]string, error) {
+	var docs []interface{}
+	for _, act := range acts {
+		docs = append(docs, act)
+	}
+
+	res, err := m.collection.InsertMany(ctx, docs)
+	if err != nil {
+		return nil, mongodb.MapError(err)
+	}
+
+	ids := make([]string, 0, len(res.InsertedIDs))
+	for _, id := range res.InsertedIDs {
+		ids = append(ids, id.(primitive.ObjectID).String())
+	}
+
+	return ids, nil
 }
 
 // DeleteAct implements ActRepository.
-func (m *MongoActRepository) DeleteAct(context.Context, primitive.ObjectID) error {
-	panic("unimplemented")
+func (m *MongoActRepository) DeleteAct(ctx context.Context, id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+
+	if _, err := m.collection.DeleteOne(ctx, filter); err != nil {
+		fmt.Println(err)
+		return mongodb.MapError(err)
+	}
+
+	return nil
 }
 
-// DeleteManyActs implements ActRepository.
-func (m *MongoActRepository) DeleteManyActs(context.Context, primitive.M) error {
-	panic("unimplemented")
-}
+// GetActs implements ActRepository.
+func (m *MongoActRepository) GetActs(ctx context.Context, genre string, limit, offset int64) ([]*entity.Act, error) {
+	filter := bson.M{}
+	if genre != "" {
+		filter["genre"] = genre
+	}
+	opts := &options.FindOptions{
+		Limit: &limit,
+		Skip:  &offset,
+	}
 
-// GetManyActs implements ActRepository.
-func (m *MongoActRepository) GetManyActs(context.Context, primitive.M, *options.FindOptions) ([]*entity.Act, error) {
-	panic("unimplemented")
+	cursor, err := m.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, mongodb.MapError(err)
+	}
+	defer cursor.Close(ctx)
+
+	acts := make([]*entity.Act, 0)
+	if err := cursor.All(ctx, &acts); err != nil {
+		return nil, mongodb.MapError(err)
+	}
+
+	return acts, nil
 }

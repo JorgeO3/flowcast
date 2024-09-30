@@ -128,7 +128,7 @@ const (
 	CappedPositionLost                     ErrorCode = "136"
 	ClientMetadataMissingField             ErrorCode = "183"
 	DuplicateKey                           ErrorCode = "11000"
-	UnknowedError                          ErrorCode = "UKWN"
+	UnknowedError                          ErrorCode = "UnknownError"
 )
 
 // Error represents a MongoDB error.
@@ -221,6 +221,6 @@ func MapError(err error) Error {
 	case mongo.WriteError:
 		return FromMongoWriteError(typedErr)
 	default:
-		return NewUnknowedError(typedErr)
+		return NewUnknowedError(err)
 	}
 }

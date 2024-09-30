@@ -1,0 +1,1 @@
+Registra el historial de escucha, analiza los gustos de los usuarios, realiza recomendaciones basadas en usuarios similares, contenido de audio, estado de ánimo, afinidad de géneros y similitud de artistas.
