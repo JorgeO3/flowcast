@@ -1,0 +1,7 @@
+# charts/service1/values.yaml
+image:
+  repository: harbor.harbor.local/library/service1
+  tag: latest
+
+env:
+  DATABASE_URL: "mongodb://service1:password1@mongodb-service1.databases.svc.cluster.local:27017/service1db"
