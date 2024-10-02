@@ -1,7 +1,5 @@
 # helmfile.yaml
 repositories:
-  - name: stable
-    url: https://charts.helm.sh/stable
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: elastic
@@ -14,13 +12,17 @@ repositories:
     url: https://kubernetes.github.io/ingress-nginx
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: varnish
+    url: https://charts.softonic.io
 
 releases:
   # NGINX Ingress Controller y API Gateway Consolidado
   - name: nginx
     namespace: default
     chart: ./charts/nginx
-    version: 0.1.0
+    version: 18.2.1
     values:
       - ./charts/nginx/values.yaml
 
@@ -28,7 +30,7 @@ releases:
   - name: varnish
     namespace: varnish
     chart: ./charts/varnish
-    version: 0.1.0
+    version: 0.18.9
     values:
       - ./charts/varnish/values.yaml
 
@@ -36,7 +38,7 @@ releases:
   - name: redpanda
     namespace: redpanda
     chart: redpanda/redpanda
-    version: 0.1.0
+    version: 5.9.5
     values:
       - replicaCount: 3
 
@@ -46,12 +48,13 @@ releases:
     chart: minio/minio
     version: 8.0.14
     values:
-      - accessKey.password: minioadmin
-        secretKey.password: minioadmin
+      - accessKey: minioadmin
+        secretKey: minioadmin
       - persistence:
           enabled: true
           size: 10Gi
       - replicas: 3
+
 
   # PostgreSQL
   - name: postgresql
@@ -59,9 +62,7 @@ releases:
     chart: bitnami/postgresql
     version: 11.18.0
     values:
-      - global:
-          postgresql:
-            postgresqlPassword: "postgres123"
+      - postgresqlPassword: "postgres123"
       - persistence:
           enabled: true
           size: 10Gi
@@ -73,7 +74,8 @@ releases:
     version: 7.17.9
     values:
       - replicas: 1
-      - minimumMasterNodes: 1
+      - cluster:
+          initial_master_nodes: ["node-1"]
       - resources:
           requests:
             cpu: "500m"
@@ -86,90 +88,102 @@ releases:
   - name: prometheus
     namespace: monitoring
     chart: prometheus-community/prometheus
-    version: 14.6.0
-    # values:
-    #   - ./charts/monitoring/prometheus/templates/values.yaml
+    version: 25.27.0
+    values:
+      - ./charts/monitoring/prometheus/values.yaml
 
   # Grafana
   - name: grafana
     namespace: monitoring
-    chart: prometheus-community/grafana
-    version: 6.17.4
-    # values:
-    #   - "./charts/monitoring/grafana/templates/values.yaml"
+    chart: grafana/grafana
+    version: 8.5.2
+    values:
+      - "./charts/monitoring/grafana/values.yaml"
 
   # Prometheus Adapter
   - name: prometheus-adapter
     namespace: monitoring
     chart: prometheus-community/prometheus-adapter
-    version: 2.18.0
-    # values:
-    #   - ./charts/monitoring/prometheus-adapter/templates/values.yaml
+    version: 4.11.0
+    values:
+      - ./charts/monitoring/prometheus-adapter/values.yaml
 
   # MongoDB (para 5 microservicios)
   - name: mongodb-service1
     namespace: databases
     chart: bitnami/mongodb
-    version: 10.26.6
+    version: 15.6.26
     values:
-      - replicaSet.enabled: false
-      - auth.rootPassword: "admin123"
-      - auth.username: "service1"
-      - auth.password: "password1"
-      - auth.database: "service1db"
+      - replicaSet:
+          enabled: false
+        auth:
+          rootPassword: "admin123"
+          username: "service1"
+          password: "password1"
+          database: "service1db"
 
   - name: mongodb-service2
     namespace: databases
     chart: bitnami/mongodb
-    version: 10.26.6
+    version: 15.6.26
     values:
-      - replicaSet.enabled: false
-      - auth.rootPassword: "admin123"
-      - auth.username: "service2"
-      - auth.password: "password2"
-      - auth.database: "service2db"
+      - replicaSet:
+          enabled: false
+      - auth:
+          rootPassword: "admin123"
+          username: "service2"
+          password: "password2"
+          database: "service2db"
 
   - name: mongodb-service3
     namespace: databases
     chart: bitnami/mongodb
-    version: 10.26.6
+    version: 15.6.26
     values:
-      - replicaSet.enabled: false
-      - auth.rootPassword: "admin123"
-      - auth.username: "service3"
-      - auth.password: "password3"
-      - auth.database: "service3db"
+      - replicaSet:
+          enabled: false
+      - auth:
+          rootPassword: "admin123"
+          username: "service3"
+          password: "password3"
+          database: "service3db"
 
   - name: mongodb-service4
     namespace: databases
     chart: bitnami/mongodb
-    version: 10.26.6
+    version: 15.6.26
     values:
-      - replicaSet.enabled: false
-      - auth.rootPassword: "admin123"
-      - auth.username: "service4"
-      - auth.password: "password4"
-      - auth.database: "service4db"
+      - replicaSet:
+          enabled: false
+      - auth:
+          rootPassword: "admin123"
+          username: "service4"
+          password: "password4"
+          database: "service4db"
 
   - name: mongodb-service5
     namespace: databases
     chart: bitnami/mongodb
-    version: 10.26.6
+    version: 15.6.26
     values:
-      - replicaSet.enabled: false
-      - auth.rootPassword: "admin123"
-      - auth.username: "service5"
-      - auth.password: "password5"
-      - auth.database: "service5db"
+      - replicaSet:
+          enabled: false
+      - auth:
+          rootPassword: "admin123"
+          username: "service5"
+          password: "password5"
+          database: "service5db"
 
   # Microservicios Backend (Ejemplo para Service1)
   - name: service1
     namespace: backend
     chart: ./charts/service1
     values:
-      - image.repository: harbor.harbor.local/library/service1
-        image.tag: latest
-      - env:
+      - image:
+          repository: harbor.harbor.local/library/service1
+          tag: latest
+        env:
           DATABASE_URL: "mongodb://service1:password1@mongodb-service1.databases.svc.cluster.local:27017/service1db"
+
 
   # Repetir para los otros microservicios...

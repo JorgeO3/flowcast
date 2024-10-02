@@ -9,7 +9,9 @@ spec:
   tls:
     {{- range .Values.ingress.tls }}
     - hosts:
-        - {{ .hosts | join ", " }}
+        {{- range .hosts }}
+        - {{ . }}
+        {{- end }}
       secretName: {{ .secretName }}
     {{- end }}
   rules:
