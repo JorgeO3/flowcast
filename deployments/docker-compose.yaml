@@ -79,7 +79,7 @@ services:
       - ${REDPANDA_ADMIN_PORT}:${REDPANDA_INTERNAL_ADMIN_PORT}
 
   redpanda-console:
-    image: ${CONSOLE_IMAGE}
+    image: docker.redpanda.com/redpandadata/console:v2.7.2
     networks:
       - redpanda_network
     entrypoint: /bin/sh
@@ -91,14 +91,30 @@ services:
           brokers: ["${REDPANDA_KAFKA_ADVERTISE_INTERNAL_ADDR}"]
           schemaRegistry:
             enabled: true
-            urls: ["http://${REDPANDA_SCHEMA_REGISTRY_INTERNAL_ADDR}"]
+            urls: ["http://${CONSOLE_SCHEMA_REGISTRY_ADDR}"]
         redpanda:
           adminApi:
             enabled: true
-            urls: ["http://${REDPANDA_RPC_ADDR}"]
+            urls: ["http://${CONSOLE_RPC_ADDR}"]
     ports:
-      - ${CONSOLE_PORT}:${CONSOLE_PORT}
+      - ${CONSOLE_PORT}:8080
     depends_on:
+      - redpanda
+
+  envoy:
+    image: envoyproxy/envoy:v1.31.2
+    ports:
+      - ${ENVOY_HTTP_PORT}:${ENVOY_HTTP_PORT}
+      - ${ENVOY_ADMIN_PORT}:${ENVOY_ADMIN_PORT}
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
+    networks:
+      - redpanda_network
+    depends_on:
+      - catalog-storage-service
+      - raw-audio-storage-service
+      - processed-audio-storage-service
+      - packaged-audio-storage-service
       - redpanda
 
   # song-storage-service:
