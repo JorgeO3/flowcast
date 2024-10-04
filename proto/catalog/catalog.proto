@@ -1,3 +1,132 @@
 syntax = "proto3";
 
-option go_package = "github.com/JorgeO3/flowcast/proto/catalog";
+package catalog;
+
+option go_package = "github.com/JorgeO3/flowcast/gen/catalog";
+
+service CatalogService {
+  rpc CreateAct(CreateActRequest) returns (CreateActResponse);
+  rpc UpdateAct(UpdateActRequest) returns (UpdateActResponse);
+  rpc GetAct(GetActRequest) returns (GetActResponse);
+  rpc GetActs(GetActsRequest) returns (GetActsResponse);
+  rpc DeleteAct(DeleteActRequest) returns (DeleteActResponse);
+  rpc CreateMany(CreateManyRequest) returns (CreateManyResponse);
+}
+
+message CreateActRequest {
+  Act act = 1;
+}
+
+message CreateActResponse {
+  string id = 1;
+}
+
+message UpdateActRequest {
+  Act act = 1;
+}
+
+message UpdateActResponse {
+  bool success = 1;
+}
+
+message GetActRequest {
+  string id = 1;
+}
+
+message GetActResponse {
+  Act act = 1;
+}
+
+message GetActsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string genre = 3;
+}
+
+message GetActsResponse {
+  repeated Act acts = 1;
+}
+
+message DeleteActRequest {
+  string id = 1;
+}
+
+message DeleteActResponse {
+  bool success = 1;
+}
+
+message CreateManyRequest {
+  repeated Act acts = 1;
+}
+
+message CreateManyResponse {
+  repeated string ids = 1;
+}
+
+message Act {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string biography = 4;
+  string formation_date = 5;
+  string disband_date = 6;
+  string profile_picture_url = 7;
+  repeated Genre genres = 8;
+  repeated Album albums = 9;
+  repeated Member members = 10;
+}
+
+message Album {
+  string id = 1;
+  string title = 2;
+  string release_date = 3;
+  Genre genre = 4;
+  string cover_art_url = 5;
+  int32 total_tracks = 6;
+  repeated Song songs = 7;
+}
+
+message Genre {
+  string name = 1;
+  string description = 2;
+}
+
+message Member {
+  string name = 1;
+  string biography = 2;
+  string birth_date = 3;
+  string profile_picture_url = 4;
+  string start_date = 5;
+  string end_date = 6;
+}
+
+message AudioBitrate {
+  int32 bitrate = 1;
+  string audio_url = 2;
+}
+
+message AudioFeatures {
+  int32 tempo = 1;
+  string audio_key = 2;
+  string mode = 3;
+  double loudness = 4;
+  double energy = 5;
+  double danceability = 6;
+  double speechiness = 7;
+  double acousticness = 8;
+  double instrumentalness = 9;
+  double liveness = 10;
+  double valence = 11;
+}
+
+message Song {
+  string id = 1;
+  string title = 2;
+  AudioFeatures audio_features = 3;
+  Genre genre = 4;
+  string release_date = 5;
+  int32 duration = 6;
+  string lyrics = 7;
+  bool explicit = 8;
+  repeated AudioBitrate bitrates = 9;
+}

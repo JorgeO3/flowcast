@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -32,7 +31,6 @@ var _ Interface = (*Logger)(nil)
 // New crea una nueva instancia de Logger con el nivel de log especificado.
 func New(level string) Interface {
 	zerolog.SetGlobalLevel(parseLogLevel(level))
-
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	return &Logger{
 		logger: &logger,
@@ -53,19 +51,6 @@ func parseLogLevel(level string) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
-}
-
-// shortenPath recorta el path hasta el directorio del proyecto.
-func shortenPath(file string, line int) string {
-	short := file
-	for i := len(file) - 1; i > 0; i-- {
-		if file[i] == '/' {
-			short = file[i+1:]
-			break
-		}
-	}
-	file = short
-	return file + ":" + strconv.Itoa(line)
 }
 
 // Debug logs a debug message
@@ -97,16 +82,26 @@ func (l *Logger) Fatal(message string, args ...interface{}) {
 func (l *Logger) log(level zerolog.Level, message string, args ...interface{}) {
 	event := l.logger.WithLevel(level)
 	if len(args) > 0 {
-		event = event.Fields(map[string]interface{}{
-			"details": fmt.Sprintf(message, args...),
-		})
-		message = "Log entry with details"
+		// Assuming args are key-value pairs
+		if len(args)%2 == 0 {
+			fields := make(map[string]interface{})
+			for i := 0; i < len(args); i += 2 {
+				key, ok1 := args[i].(string)
+				value := args[i+1]
+				if ok1 {
+					fields[key] = value
+				}
+			}
+			event = event.Fields(fields)
+		} else {
+			event = event.Interface("details", args)
+		}
 	}
 	event.Msg(message)
 }
 
-// ZerologMiddleware for logging HTTP requests
-func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
+// LoggingMiddleware logs HTTP requests using the provided logger.
+func LoggingMiddleware(log Interface) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -117,16 +112,16 @@ func ZerologMiddleware(logg Interface) func(next http.Handler) http.Handler {
 			// Process the request
 			next.ServeHTTP(ww, r)
 
-			// Log the response
-			logg.(*Logger).logger.Info().
-				Str("method", r.Method).
-				Str("url", r.URL.String()).
-				Str("remote_addr", r.RemoteAddr).
-				Str("user_agent", r.UserAgent()).
-				Int("status", ww.Status()).
-				Int("bytes", ww.BytesWritten()).
-				Dur("duration", time.Since(start)).
-				Msg("Handled request")
+			// Log the request
+			log.Info("Handled HTTP request",
+				"method", r.Method,
+				"url", r.URL.String(),
+				"remote_addr", r.RemoteAddr,
+				"user_agent", r.UserAgent(),
+				"status", ww.Status(),
+				"bytes", ww.BytesWritten(),
+				"duration_ms", time.Since(start).Milliseconds(),
+			)
 		})
 	}
 }

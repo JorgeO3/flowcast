@@ -5,8 +5,8 @@ import "github.com/caarlos0/env/v11"
 // CatalogConfig holds the configuration for the catalog service.
 type CatalogConfig struct {
 	AppName     string `env:"CATALOG_APP_NAME"`
-	HTTPHost    string `env:"CATALOG_HTTP_HOST"`
-	HTTPPort    string `env:"CATALOG_HTTP_PORT"`
+	Host        string `env:"CATALOG_HOST"`
+	Port        string `env:"CATALOG_PORT"`
 	DatabaseURL string `env:"CATALOG_DB_URL"`
 	DBName      string `env:"CATALOG_DB_NAME"`
 	Version     string `env:"CATALOG_VERSION"`
