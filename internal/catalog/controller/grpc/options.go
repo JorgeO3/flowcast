@@ -37,6 +37,7 @@ func WithDeleteActUC(uc *usecase.DeleteActUC) Opts {
 	}
 }
 
+// WithGetActsUC sets the GetActsUC in the controller.
 func WithGetActsUC(uc *usecase.GetActsUC) Opts {
 	return func(c *Controller) {
 		c.GetActsUC = uc

@@ -1,4 +1,4 @@
-package repository
+package act
 
 import (
 	"context"
@@ -18,8 +18,8 @@ type MongoActRepository struct {
 	collection *mongo.Collection
 }
 
-// NewMongoActRepository creates a new instance of MongoActRepository.
-func NewMongoActRepository(db *mongo.Database, collection string) ActRepository {
+// NewRepository creates a new instance of MongoActRepository.
+func NewRepository(db *mongo.Database, collection string) Repository {
 	return &MongoActRepository{
 		db:         db,
 		collection: db.Collection(collection),
@@ -61,8 +61,8 @@ func (m *MongoActRepository) GetActByID(ctx context.Context, id primitive.Object
 	return &act, nil
 }
 
-// CreateManyActs implements ActRepository.
-func (m *MongoActRepository) CreateManyActs(ctx context.Context, acts []*entity.Act) ([]string, error) {
+// CreateActs implements ActRepository.
+func (m *MongoActRepository) CreateActs(ctx context.Context, acts []*entity.Act) ([]string, error) {
 	var docs []interface{}
 	for _, act := range acts {
 		docs = append(docs, act)

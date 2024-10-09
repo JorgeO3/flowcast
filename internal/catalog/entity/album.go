@@ -22,7 +22,7 @@ type AlbumOption func(*Album)
 // WithAlbumID set the ID of the album
 func WithAlbumID(id primitive.ObjectID) AlbumOption {
 	return func(a *Album) {
-		a.ID = id
+		a.ID = GetObjectID(id)
 	}
 }
 

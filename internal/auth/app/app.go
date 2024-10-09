@@ -79,7 +79,7 @@ func Run(cfg *configs.AuthConfig, logg logger.Interface) {
 	// Set up middlewares for the router.
 	r.Use(middleware.RequestID)                 // Middleware to inject request ID into the context.
 	r.Use(middleware.RealIP)                    // Middleware to set the RemoteAddr to the IP address of the request.
-	r.Use(logger.ZerologMiddleware(logg))       // Custom middleware to log HTTP requests with zerolog.
+	r.Use(logger.LoggingMiddleware(logg))       // Custom middleware to log HTTP requests with zerolog.
 	r.Use(middleware.Recoverer)                 // Middleware to recover from panics and send an appropriate error response.
 	r.Use(middleware.Heartbeat("/"))            // Middleware to provide a healthcheck endpoint at the root path.
 	r.Use(middleware.RequestSize(1024))         // Middleware to limit the maximum request size to 1 KB.

@@ -1,11 +1,12 @@
-package usecase
+package act
 
 import (
 	"context"
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
@@ -35,16 +36,17 @@ type UpdateActOutput struct{}
 
 // UpdateActUC is the use case for updating an musical actor.
 type UpdateActUC struct {
-	ActRepository repository.ActRepository
+	ActRepository act.Repository
 	Logger        logger.Interface
-	Validator     validator.Validator
+	Validator     validator.Interface
+	RaRepository  rawaudio.Repository
 }
 
 // UpdateActUCOpts represents the functional options for the UpdateActUC.
 type UpdateActUCOpts func(uc *UpdateActUC)
 
 // WithUpdateActRepository sets the ActRepository in the UpdateActUC.
-func WithUpdateActRepository(repo repository.ActRepository) UpdateActUCOpts {
+func WithUpdateActRepository(repo act.Repository) UpdateActUCOpts {
 	return func(uc *UpdateActUC) {
 		uc.ActRepository = repo
 	}
@@ -58,9 +60,16 @@ func WithUpdateActLogger(logger logger.Interface) UpdateActUCOpts {
 }
 
 // WithUpdateActValidator sets the validator in the UpdateActUC.
-func WithUpdateActValidator(validator validator.Validator) UpdateActUCOpts {
+func WithUpdateActValidator(validator validator.Interface) UpdateActUCOpts {
 	return func(uc *UpdateActUC) {
 		uc.Validator = validator
+	}
+}
+
+// WithUpdateActRaRepository sets the RARepository in the UpdateActUC.
+func WithUpdateActRaRepository(repo rawaudio.Repository) UpdateActUCOpts {
+	return func(uc *UpdateActUC) {
+		uc.RaRepository = repo
 	}
 }
 

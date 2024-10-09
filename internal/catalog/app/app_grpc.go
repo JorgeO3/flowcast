@@ -1,4 +1,4 @@
-//go:build !grpc
+//go:build grpc
 
 // Package app provides the entry point to the catalog service.
 package app

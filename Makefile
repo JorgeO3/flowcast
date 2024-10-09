@@ -1,12 +1,12 @@
-# Makefile principal
+# Main Makefile
 
-# Cargar variables de entorno globales desde .env
+# Load global environment variables from .env if it exists
 ifneq (,$(wildcard ./.env))
     include .env
     export
 endif
 
-# Definir las rutas raíz y otros directorios
+# Define root path and other directory paths
 project_root := $(CURDIR)
 go_root_path := gitlab.com/JorgeO3/flowcast
 
@@ -19,36 +19,29 @@ cmd_directory := $(project_root)/cmd
 migrations_directory := $(project_root)/migrations
 assets_directory := $(project_root)/assets
 
-# Comandos comunes
-python_command := python
+# Common commands
 deno_command := deno run -A
 
-# Incluir Makefiles hijos
+# Include child Makefiles for different components
 include deployments/Makefile
-include web/Makefile
-include cmd/Makefile
+include web/Makefile       # Frontend Makefile
+include cmd/Makefile       # Backend Makefile
 
-# Documentación de las recetas
+# Declare phony targets to avoid conflicts with files of the same name
 .PHONY: all generate-acts catalog-service download-songs
 
-# Objetivo por defecto
+# Default target that builds and starts all necessary services
 all: generate-acts catalog-service download-songs start-services start-frontend start-backend
 
-# Generar acts
+# Generate acts using the specified Deno script
 generate-acts:
-	@echo "Generando acts..."
+	@echo "Generating acts..."
 	@fish -c '$(deno_command) $(scripts_directory)/generate-acts.ts'
-	@echo "Acts han sido generados."
+	@echo "Acts have been generated."
 
-# Iniciar el servicio de catálogo
-catalog-service:
-	@echo "Iniciando el servicio de catálogo..."
-	@$(CATALOG_SERVICE_ENVS) go run $(cmd_directory)/catalog/main.go
-	@echo "Servicio de catálogo está activo."
-
-# Descargar canciones
+# Download songs by running the download script
 download-songs:
-	@echo "Iniciando el script de descarga de canciones..."
+	@echo "Starting the song download script..."
 	@SONGS_DIR=$(songs_directory) \
-	$(python_command) $(scripts_directory)/download_music.py
-	@echo "Descarga de canciones completada."
+	bash $(scripts_directory)/download_music.sh
+	@echo "Song download completed."

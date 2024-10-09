@@ -1,12 +1,13 @@
-// Package usecase provides the use cases for the catalog service.
-package usecase
+// Package act provides the use cases for the catalog service.
+package act
 
 import (
 	"context"
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
@@ -38,16 +39,17 @@ type CreateActOutput struct {
 
 // CreateActUC is the use case for creating an musical actor.
 type CreateActUC struct {
-	ActRepository repository.ActRepository
+	ActRepository act.Repository
 	Logger        logger.Interface
-	Validator     validator.Validator
+	Validator     validator.Interface
+	RaRepository  rawaudio.Repository
 }
 
 // CreateActUCOpts represents the functional options for the CreateActUC.
 type CreateActUCOpts func(uc *CreateActUC)
 
 // WithCreateActRepository sets the ActRepository in the CreateActUC.
-func WithCreateActRepository(repo repository.ActRepository) CreateActUCOpts {
+func WithCreateActRepository(repo act.Repository) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.ActRepository = repo
 	}
@@ -61,9 +63,16 @@ func WithCreateActLogger(logger logger.Interface) CreateActUCOpts {
 }
 
 // WithCreateActValidator sets the validator in the CreateActUC.
-func WithCreateActValidator(validator validator.Validator) CreateActUCOpts {
+func WithCreateActValidator(validator validator.Interface) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Validator = validator
+	}
+}
+
+// WithCreateActRARepository sets the RawAudioRepository in the CreateActUC.
+func WithCreateActRARepository(repo rawaudio.Repository) CreateActUCOpts {
+	return func(uc *CreateActUC) {
+		uc.RaRepository = repo
 	}
 }
 

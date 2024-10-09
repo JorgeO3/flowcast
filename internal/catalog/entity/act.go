@@ -15,6 +15,7 @@ const (
 // Act represent an musical act entity
 type Act struct {
 	ID                primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	UserID            string             `json:"userId,omitempty" bson:"user_id,omitempty"`
 	Name              string             `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
 	Type              string             `json:"type,omitempty" bson:"type,omitempty" validate:"required,oneof='Band' 'Solo Artist' 'Duo'"`
 	Biography         string             `json:"biography,omitempty" bson:"biography,omitempty" validate:"required"`
@@ -30,13 +31,30 @@ type Act struct {
 type ActOption func(*Act)
 
 // WithActID set the ID of the act
-func WithActID(id primitive.ObjectID) ActOption {
+func WithActID(id any) ActOption {
 	return func(a *Act) {
-		if id.IsZero() {
-			a.ID = primitive.NewObjectID()
-		} else {
-			a.ID = id
+		a.ID = GetObjectID(id)
+	}
+}
+
+// GetObjectID get the object ID
+func GetObjectID(id any) primitive.ObjectID {
+	if !id.(primitive.ObjectID).IsZero() {
+		return id.(primitive.ObjectID)
+	}
+
+	if id.(string) != "" {
+		if oid, err := primitive.ObjectIDFromHex(id.(string)); err == nil {
+			return oid
 		}
+	}
+	return primitive.NewObjectID()
+}
+
+// WithActUserID set the user ID of the act
+func WithActUserID(userID string) ActOption {
+	return func(a *Act) {
+		a.UserID = userID
 	}
 }
 

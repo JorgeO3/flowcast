@@ -10,13 +10,84 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/JorgeO3/flowcast/configs"
 	e "github.com/JorgeO3/flowcast/internal/catalog/errors"
+	"github.com/JorgeO3/flowcast/internal/catalog/usecase/act"
+	"github.com/JorgeO3/flowcast/pkg/logger"
 )
+
+// Opts represents the functional options for the controller.
+type Opts func(c *ActController)
+
+// WithCreateActUC sets the CreateActUC in the controller.
+func WithCreateActUC(uc *act.CreateActUC) Opts {
+	return func(c *ActController) {
+		c.CreateActUC = uc
+	}
+}
+
+// WithUpdateActUC sets the UpdateActUC in the controller.
+func WithUpdateActUC(uc *act.UpdateActUC) Opts {
+	return func(c *ActController) {
+		c.UpdateActUC = uc
+	}
+}
+
+// WithGetActByIDUC sets the GetActByIDUC in the controller.
+func WithGetActByIDUC(uc *act.GetActByIDUC) Opts {
+	return func(c *ActController) {
+		c.GetActByIDUC = uc
+	}
+}
+
+// WithDeleteActUC sets the DeleteActUC in the controller.
+func WithDeleteActUC(uc *act.DeleteActUC) Opts {
+	return func(c *ActController) {
+		c.DeleteActUC = uc
+	}
+}
+
+// WithGetActsUC sets the GetActsUC in the controller.
+func WithGetActsUC(uc *act.GetActsUC) Opts {
+	return func(c *ActController) {
+		c.GetActsUC = uc
+	}
+}
+
+// WithCreateManyUC sets the CreateManyUC in the controller.
+func WithCreateManyUC(uc *act.CreateActsUC) Opts {
+	return func(c *ActController) {
+		c.CreateManyUC = uc
+	}
+}
+
+// WithLogger sets the logger in the controller.
+func WithLogger(l logger.Interface) Opts {
+	return func(c *ActController) {
+		c.Logger = l
+	}
+}
+
+// WithConfig sets the config in the controller.
+func WithConfig(cfg *configs.CatalogConfig) Opts {
+	return func(c *ActController) {
+		c.Cfg = cfg
+	}
+}
+
+// New creates a new instance of ActController.
+func New(opts ...Opts) *ActController {
+	c := &ActController{}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
 
 // handleError processes errors and sends appropriate HTTP responses.
 // It distinguishes between known catalog errors and unexpected internal errors,
 // logging each accordingly.
-func (c *Controller) handleError(w http.ResponseWriter, err error) {
+func (c *ActController) handleError(w http.ResponseWriter, err error) {
 	var catalogErr e.CatalogError
 	if errors.As(err, &catalogErr) {
 		http.Error(w, catalogErr.Msg(), catalogErr.Code())
@@ -29,7 +100,7 @@ func (c *Controller) handleError(w http.ResponseWriter, err error) {
 
 // respondJSON serializes the given data to JSON and writes it to the response.
 // It sets the appropriate Content-Type header and handles encoding errors.
-func (c *Controller) respondJSON(w http.ResponseWriter, data interface{}) {
+func (c *ActController) respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if data == nil {
 		return
@@ -70,7 +141,7 @@ func parsePaginationParams(query url.Values) (int64, int64, error) {
 }
 
 // decodeJSON decodifica el cuerpo de la solicitud JSON en la estructura proporcionada.
-func (c *Controller) decodeJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+func (c *ActController) decodeJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		c.Logger.Error("Error decoding request body", "error", err)
 		c.handleError(w, e.NewBadRequest("Invalid request payload", err))
@@ -80,6 +151,6 @@ func (c *Controller) decodeJSON(w http.ResponseWriter, r *http.Request, v interf
 }
 
 // withTimeout crea un contexto con un timeout de 5 segundos.
-func (c *Controller) withTimeout(r *http.Request) (context.Context, context.CancelFunc) {
+func (c *ActController) withTimeout(r *http.Request) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(r.Context(), 5*time.Second)
 }

@@ -2,66 +2,65 @@
 
 .PHONY: start-services rebuild-services stop-services stop-all-services view-logs cleanup-docker check-status
 
-# Definir las rutas y archivos específicos de deployments
+# Define paths and files specific to deployments
 deployments_directory := $(CURDIR)
 docker_compose_file := $(deployments_directory)/docker-compose.yaml
 env_file := $(deployments_directory)/.env
 
-# Cargar y exportar variables de entorno específicas para deployments
+# Load and export environment variables specific to deployments if .env exists
 ifneq (,$(wildcard $(env_file)))
     include $(env_file)
     export
 endif
 
-# Comando Docker Compose encapsulado con variables de entorno
+# Docker Compose command encapsulated with the specified docker-compose file
 DOCKER_COMPOSE_CMD := docker compose -f $(docker_compose_file)
 
-# Documentación de las recetas
-# Iniciar servicios de deployments
+# Start deployment services
 start-services:
-	@echo "Iniciando servicios de deployments..."
+	@echo "Starting deployment services..."
 	@$(DOCKER_COMPOSE_CMD) up -d
-	@echo "Servicios de deployments están activos."
+	@echo "Deployment services are now active."
 
-# Reconstruir servicios sin cache
+# Rebuild services without using the cache
 rebuild-services:
-	@read -p "¿Estás seguro de que deseas reconstruir todos los servicios sin cache? [y/N] " confirm && [ "$${confirm}" = y ]
-	@echo "Deteniendo servicios..."
+	@read -p "Are you sure you want to rebuild all services without cache? [y/N] " confirm && [ "$${confirm}" = y ]
+	@echo "Stopping services..."
 	@$(DOCKER_COMPOSE_CMD) down --remove-orphans
-	@echo "Eliminando archivos cacheados..."
+	@echo "Removing cached files..."
 	@sudo rm -rf $(deployments_directory)/data
-	@echo "Reconstruyendo servicios sin cache..."
+	@echo "Rebuilding services without cache..."
 	@$(DOCKER_COMPOSE_CMD) build --pull --no-cache
-	@echo "Reiniciando servicios..."
+	@echo "Restarting services..."
 	@$(MAKE) -C $(deployments_directory) start-services
-	@echo "Servicios han sido reconstruidos y están corriendo."
+	@echo "Services have been rebuilt and are running."
 
-# Detener servicios específicos
+# Stop specific services
 stop-services:
-	@read -p "¿Estás seguro de que deseas detener estos servicios? [y/N] " confirm && [ "$${confirm}" = y ]
-	@echo "Deteniendo servicios específicos..."
+	@read -p "Are you sure you want to stop these services? [y/N] " confirm && [ "$${confirm}" = y ]
+	@echo "Stopping specified services..."
 	@$(DOCKER_COMPOSE_CMD) down $(services)
 
-# Detener todos los servicios
+# Stop all services
 stop-all-services:
-	@read -p "¿Estás seguro de que deseas detener todos los servicios? [y/N] " confirm && [ "$${confirm}" = y ]
-	@echo "Deteniendo todos los servicios..."
+	@read -p "Are you sure you want to stop all services? [y/N] " confirm && [ "$${confirm}" = y ]
+	@echo "Stopping all services..."
 	@$(DOCKER_COMPOSE_CMD) down
-	@echo "Todos los servicios han sido detenidos."
+	@echo "All services have been stopped."
 
-# Ver logs de todos los servicios
+# View logs of all services
 view-logs:
-	@echo "Mostrando logs de todos los servicios..."
+	@echo "Displaying logs for all services..."
 	@$(DOCKER_COMPOSE_CMD) logs -f
 
-# Limpiar objetos Docker no usados
+# Clean up unused Docker objects
 cleanup-docker:
-	@echo "Eliminando todos los objetos Docker no usados..."
+	@echo "Removing all unused Docker objects..."
 	@docker system prune -f
-	@echo "Limpieza completada."
+	@echo "Cleanup completed."
 
-# Verificar estado de servicios
+# Check the status of services
 check-status:
-	@echo "Verificando el estado de los servicios..."
+	@echo "Checking the status of services..."
 	@$(DOCKER_COMPOSE_CMD) ps
-	@echo "Verificación de estado completada."
+	@echo "Status check completed."

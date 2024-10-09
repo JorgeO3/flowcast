@@ -1,10 +1,11 @@
-package usecase
+package act
 
 import (
 	"context"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,9 +25,10 @@ type DeleteActOutput struct{}
 // It depends on ActRepository for data access, Logger for logging activities,
 // and Validator for input validation.
 type DeleteActUC struct {
-	ActRepository repository.ActRepository
+	ActRepository act.Repository
 	Logger        logger.Interface
-	Validator     validator.Validator
+	Validator     validator.Interface
+	RaRepository  rawaudio.Repository
 }
 
 // DeleteActOpts defines a functional option for configuring DeleteActUC.
@@ -35,7 +37,7 @@ type DeleteActOpts func(*DeleteActUC)
 
 // WithDeleteActRepository injects the ActRepository into the use case.
 // It enables the use case to interact with the data layer for deleting acts.
-func WithDeleteActRepository(repo repository.ActRepository) DeleteActOpts {
+func WithDeleteActRepository(repo act.Repository) DeleteActOpts {
 	return func(uc *DeleteActUC) {
 		uc.ActRepository = repo
 	}
@@ -51,13 +53,21 @@ func WithDeleteActLogger(logg logger.Interface) DeleteActOpts {
 
 // WithDeleteActValidator injects the Validator into the use case.
 // It ensures that input parameters are validated before processing.
-func WithDeleteActValidator(val validator.Validator) DeleteActOpts {
+func WithDeleteActValidator(val validator.Interface) DeleteActOpts {
 	return func(uc *DeleteActUC) {
 		uc.Validator = val
 	}
 }
 
-// NewDeleteActUC creates a new instance of DeleteActUC with the provided functional options.
+// WithDeleteActRaRepository injects the RawAudioRepository into the use case.
+// It enables the use case to interact with the raw audio data layer for deleting acts.
+func WithDeleteActRaRepository(repo rawaudio.Repository) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.RaRepository = repo
+	}
+}
+
+// NewDeleteAct creates a new instance of DeleteActUC with the provided functional options.
 // This constructor promotes flexibility and decouples the use case from its dependencies,
 // making it easier to test and maintain.
 func NewDeleteAct(opts ...DeleteActOpts) *DeleteActUC {

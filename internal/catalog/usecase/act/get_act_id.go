@@ -1,11 +1,11 @@
-package usecase
+package act
 
 import (
 	"context"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,16 +23,16 @@ type GetActByIDOutput struct {
 
 // GetActByIDUC is the use case for getting a musical act by id
 type GetActByIDUC struct {
-	ActRepository repository.ActRepository
+	ActRepository act.Repository
 	Logger        logger.Interface
-	Validator     validator.Validator
+	Validator     validator.Interface
 }
 
 // GetActByIDOpts type is used for implement the command pattern
 type GetActByIDOpts func(*GetActByIDUC)
 
 // WithGetAcByIDRepository adds the repo to the usecase
-func WithGetAcByIDRepository(repo repository.ActRepository) GetActByIDOpts {
+func WithGetAcByIDRepository(repo act.Repository) GetActByIDOpts {
 	return func(uc *GetActByIDUC) {
 		uc.ActRepository = repo
 	}
@@ -46,7 +46,7 @@ func WithGetAcByIDLogger(logg logger.Interface) GetActByIDOpts {
 }
 
 // WithGetAcByIDValidator adds the validator to the usecase
-func WithGetAcByIDValidator(val validator.Validator) GetActByIDOpts {
+func WithGetAcByIDValidator(val validator.Interface) GetActByIDOpts {
 	return func(uc *GetActByIDUC) {
 		uc.Validator = val
 	}

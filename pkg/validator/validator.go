@@ -1,3 +1,4 @@
+// Package validator provides a validator for structs.
 package validator
 
 import (
@@ -6,8 +7,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Validator represent the validator contract
-type Validator interface {
+// Interface represent the validator contract
+type Interface interface {
 	Validate(i interface{}) error
 }
 
@@ -20,8 +21,8 @@ func (g *goPlaygroundValidator) Validate(i interface{}) error {
 	return g.validator.Struct(i)
 }
 
-// NewGoPlaygroundValidator create a new instance of Validator
-func New() Validator {
+// New create a new instance of Validator
+func New() Interface {
 	validator := validator.New()
 
 	validator.RegisterValidation("fullname", validateFullName)

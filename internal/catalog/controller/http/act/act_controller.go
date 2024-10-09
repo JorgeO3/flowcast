@@ -1,4 +1,4 @@
-// Package http provides the HTTP Controller for the catalog service.
+// Package http provides the HTTP Controllers for the catalog service.
 package http
 
 import (
@@ -7,20 +7,20 @@ import (
 
 	"github.com/JorgeO3/flowcast/configs"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	uc "github.com/JorgeO3/flowcast/internal/catalog/usecase"
+	"github.com/JorgeO3/flowcast/internal/catalog/usecase/act"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Controller handles HTTP requests for the catalog service and delegates operations to use cases.
-type Controller struct {
-	GetActsUC    *uc.GetActsUC
-	DeleteActUC  *uc.DeleteActUC
-	CreateActUC  *uc.CreateActUC
-	UpdateActUC  *uc.UpdateActUC
-	GetActByIDUC *uc.GetActByIDUC
-	CreateManyUC *uc.CreateManyUC
+// ActController handles HTTP requests for the catalog service and delegates operations to use cases.
+type ActController struct {
+	GetActsUC    *act.GetActsUC
+	DeleteActUC  *act.DeleteActUC
+	CreateActUC  *act.CreateActUC
+	UpdateActUC  *act.UpdateActUC
+	GetActByIDUC *act.GetActByIDUC
+	CreateManyUC *act.CreateActsUC
 
 	Logger logger.Interface
 	Cfg    *configs.CatalogConfig
@@ -29,11 +29,11 @@ type Controller struct {
 // CreateAct handles the creation of a new act.
 // It decodes the JSON request body into CreateActInput, executes the create use case,
 // and responds with the created act or an error.
-func (c *Controller) CreateAct(w http.ResponseWriter, r *http.Request) {
+func (c *ActController) CreateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input uc.CreateActInput
+	var input act.CreateActInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}
@@ -51,11 +51,11 @@ func (c *Controller) CreateAct(w http.ResponseWriter, r *http.Request) {
 // UpdateAct handles updating an existing act.
 // It decodes the JSON request body into UpdateActInput, executes the update use case,
 // and responds with the updated act or an error.
-func (c *Controller) UpdateAct(w http.ResponseWriter, r *http.Request) {
+func (c *ActController) UpdateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input uc.UpdateActInput
+	var input act.UpdateActInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}
@@ -70,11 +70,8 @@ func (c *Controller) UpdateAct(w http.ResponseWriter, r *http.Request) {
 	c.respondJSON(w, output)
 }
 
-// GetAct retrieves acts based on query parameters.
-// - If 'id' is provided, it returns a single act.
-// - If 'genre' is provided, it returns acts of that genre with pagination.
-// - Otherwise, it returns all acts with pagination.
-func (c *Controller) GetAct(w http.ResponseWriter, r *http.Request) {
+// GetAct retrieves an act by its MongoDB ObjectID.
+func (c *ActController) GetAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
@@ -86,7 +83,7 @@ func (c *Controller) GetAct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := c.GetActByIDUC.Execute(ctx, uc.GetActByIDInput{ID: id})
+	output, err := c.GetActByIDUC.Execute(ctx, act.GetActByIDInput{ID: id})
 	if err != nil {
 		c.Logger.Error("Error executing GetActByID use case - err %v", err)
 		c.handleError(w, err)
@@ -98,7 +95,7 @@ func (c *Controller) GetAct(w http.ResponseWriter, r *http.Request) {
 
 // GetActs retrieves all acts with pagination and optional filtering by genre.
 // It executes the GetActs use case and responds with the results.
-func (c *Controller) GetActs(w http.ResponseWriter, r *http.Request) {
+func (c *ActController) GetActs(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
@@ -113,7 +110,7 @@ func (c *Controller) GetActs(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(limit, offset, genre)
 
-	input := uc.GetActsInput{
+	input := act.GetActsInput{
 		Limit:  limit,
 		Offset: offset,
 		Genre:  genre,
@@ -131,7 +128,7 @@ func (c *Controller) GetActs(w http.ResponseWriter, r *http.Request) {
 
 // DeleteAct handles the deletion of an act by its MongoDB ObjectID.
 // It parses the ID from the URL, executes the delete use case, and responds with an error or success message.
-func (c *Controller) DeleteAct(w http.ResponseWriter, r *http.Request) {
+func (c *ActController) DeleteAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
@@ -143,7 +140,7 @@ func (c *Controller) DeleteAct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := c.DeleteActUC.Execute(ctx, uc.DeleteActInput{ID: id})
+	output, err := c.DeleteActUC.Execute(ctx, act.DeleteActInput{ID: id})
 	if err != nil {
 		c.Logger.Error("Error executing DeleteAct use case - err %v", err)
 		c.handleError(w, err)
@@ -156,11 +153,11 @@ func (c *Controller) DeleteAct(w http.ResponseWriter, r *http.Request) {
 // CreateMany handles the creation of multiple acts.
 // It decodes the JSON request body into CreateManyInput, executes the create many use case,
 // and responds with the created acts or an error.
-func (c *Controller) CreateMany(w http.ResponseWriter, r *http.Request) {
+func (c *ActController) CreateMany(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input uc.CreateManyInput
+	var input act.CreateActsInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}

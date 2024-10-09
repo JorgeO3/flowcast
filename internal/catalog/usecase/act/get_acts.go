@@ -1,11 +1,11 @@
-package usecase
+package act
 
 import (
 	"context"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
@@ -26,9 +26,9 @@ type GetActsOutput struct {
 // GetActsUC encapsulates the use case for fetching a list of musical acts.
 // It depends on ActRepository for data access, Logger for logging, and Validator for input validation.
 type GetActsUC struct {
-	ActRepository repository.ActRepository
+	ActRepository act.Repository
 	Logger        logger.Interface
-	Validator     validator.Validator
+	Validator     validator.Interface
 }
 
 // GetActsOpts defines a functional option for configuring GetActsUC.
@@ -37,7 +37,7 @@ type GetActsOpts func(*GetActsUC)
 
 // WithGetActsRepository injects the ActRepository into the use case.
 // It enables the use case to interact with the data layer for retrieving acts.
-func WithGetActsRepository(repo repository.ActRepository) GetActsOpts {
+func WithGetActsRepository(repo act.Repository) GetActsOpts {
 	return func(uc *GetActsUC) {
 		uc.ActRepository = repo
 	}
@@ -53,7 +53,7 @@ func WithGetActsLogger(logg logger.Interface) GetActsOpts {
 
 // WithGetActsValidator injects the Validator into the use case.
 // It ensures that input parameters are validated before processing.
-func WithGetActsValidator(val validator.Validator) GetActsOpts {
+func WithGetActsValidator(val validator.Interface) GetActsOpts {
 	return func(uc *GetActsUC) {
 		uc.Validator = val
 	}
