@@ -42,7 +42,7 @@ const ALL_FLAGS: Flag[] = [
         flagType: "number",
     },
     {
-        flag: "r, --range <range:string>",
+        flag: "-r, --range <range:string>",
         description: "Specify the range of data to read (default: all)",
         short: "r",
         long: "range",

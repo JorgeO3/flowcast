@@ -9,14 +9,16 @@ import (
 	"time"
 
 	"github.com/JorgeO3/flowcast/configs"
-	actc "github.com/JorgeO3/flowcast/internal/catalog/controller/http/act"
+	controller "github.com/JorgeO3/flowcast/internal/catalog/controller/http"
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	actr "github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	rar "github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
-	actuc "github.com/JorgeO3/flowcast/internal/catalog/usecase/act"
+	uc "github.com/JorgeO3/flowcast/internal/catalog/usecase"
+
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/minio"
 	"github.com/JorgeO3/flowcast/pkg/mongodb"
+	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -49,60 +51,68 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	if err != nil {
 		logg.Fatal("minio connection error: %v", err)
 	}
-
 	raRepo := rar.NewRepository(raClient.GetClient(), cfg.RawAudioBucketName)
 
+	// Create a new validator for the act controller.
 	val := validator.New()
 
-	createActUC := actuc.NewCreateAct(
-		actuc.WithCreateActLogger(logg),
-		actuc.WithCreateActValidator(val),
-		actuc.WithCreateActRepository(actRepo),
-		actuc.WithCreateActRARepository(raRepo),
+	// Create the redpanda producer for the act controller.
+	pr, err := redpanda.NewProducer(cfg.RedpandaBrokers)
+	if err != nil {
+		logg.Fatal("failed to create redpanda producer: %w", err)
+	}
+
+	// Create the use cases for the act controller.
+	createActUC := uc.NewCreateAct(
+		uc.WithCreateActProducer(pr),
+		uc.WithCreateActLogger(logg),
+		uc.WithCreateActValidator(val),
+		uc.WithCreateActRepository(actRepo),
+		uc.WithCreateActRARepository(raRepo),
 	)
 
-	updateActUC := actuc.NewUpdateAct(
-		actuc.WithUpdateActLogger(logg),
-		actuc.WithUpdateActValidator(val),
-		actuc.WithUpdateActRepository(actRepo),
-		actuc.WithUpdateActRaRepository(raRepo),
+	updateActUC := uc.NewUpdateAct(
+		uc.WithUpdateActLogger(logg),
+		uc.WithUpdateActValidator(val),
+		uc.WithUpdateActRepository(actRepo),
+		uc.WithUpdateActRaRepository(raRepo),
 	)
 
-	getActByIDUC := actuc.NewGetActByID(
-		actuc.WithGetAcByIDLogger(logg),
-		actuc.WithGetAcByIDValidator(val),
-		actuc.WithGetAcByIDRepository(actRepo),
+	getActByIDUC := uc.NewGetActByID(
+		uc.WithGetAcByIDLogger(logg),
+		uc.WithGetAcByIDValidator(val),
+		uc.WithGetAcByIDRepository(actRepo),
 	)
 
-	deleteActUC := actuc.NewDeleteAct(
-		actuc.WithDeleteActLogger(logg),
-		actuc.WithDeleteActValidator(val),
-		actuc.WithDeleteActRepository(actRepo),
-		actuc.WithDeleteActRaRepository(raRepo),
+	deleteActUC := uc.NewDeleteAct(
+		uc.WithDeleteActLogger(logg),
+		uc.WithDeleteActValidator(val),
+		uc.WithDeleteActRepository(actRepo),
+		uc.WithDeleteActRaRepository(raRepo),
 	)
 
-	createManyUC := actuc.NewCreateActs(
-		actuc.WithCreateActsLogger(logg),
-		actuc.WithCreateActsValidator(val),
-		actuc.WithCreateActsRepository(actRepo),
-		actuc.WithCreateActsRaRepository(raRepo),
+	createManyUC := uc.NewCreateActs(
+		uc.WithCreateActsLogger(logg),
+		uc.WithCreateActsValidator(val),
+		uc.WithCreateActsRepository(actRepo),
+		uc.WithCreateActsRaRepository(raRepo),
 	)
 
-	getActsUC := actuc.NewGetActs(
-		actuc.WithGetActsLogger(logg),
-		actuc.WithGetActsValidator(val),
-		actuc.WithGetActsRepository(actRepo),
+	getActsUC := uc.NewGetActs(
+		uc.WithGetActsLogger(logg),
+		uc.WithGetActsValidator(val),
+		uc.WithGetActsRepository(actRepo),
 	)
 
-	controller := actc.New(
-		actc.WithConfig(cfg),
-		actc.WithLogger(logg),
-		actc.WithGetActsUC(getActsUC),
-		actc.WithCreateActUC(createActUC),
-		actc.WithUpdateActUC(updateActUC),
-		actc.WithDeleteActUC(deleteActUC),
-		actc.WithGetActByIDUC(getActByIDUC),
-		actc.WithCreateManyUC(createManyUC),
+	actController := controller.New(
+		controller.WithConfig(cfg),
+		controller.WithLogger(logg),
+		controller.WithGetActsUC(getActsUC),
+		controller.WithCreateActUC(createActUC),
+		controller.WithUpdateActUC(updateActUC),
+		controller.WithDeleteActUC(deleteActUC),
+		controller.WithGetActByIDUC(getActByIDUC),
+		controller.WithCreateManyUC(createManyUC),
 	)
 
 	// Create a new router using the chi library.
@@ -127,16 +137,16 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		MaxAge:           300,
 	}))
 
-	// Set up routes for the router.
+	// Set up act routes for the router.
 	r.Route("/acts", func(r chi.Router) {
-		r.Get("/", controller.GetActs)
-		r.Post("/", controller.CreateAct)
-		r.Post("/bulk", controller.CreateMany)
+		r.Get("/", actController.GetActs)
+		r.Post("/", actController.CreateAct)
+		r.Post("/bulk", actController.CreateMany)
 
 		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", controller.GetAct)
-			r.Put("/", controller.UpdateAct)
-			r.Delete("/", controller.DeleteAct)
+			r.Get("/", actController.GetAct)
+			r.Put("/", actController.UpdateAct)
+			r.Delete("/", actController.DeleteAct)
 		})
 	})
 

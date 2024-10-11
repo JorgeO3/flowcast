@@ -1,4 +1,4 @@
-package act
+package usecase
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
 
@@ -40,6 +41,7 @@ type UpdateActUC struct {
 	Logger        logger.Interface
 	Validator     validator.Interface
 	RaRepository  rawaudio.Repository
+	Producer      redpanda.Producer
 }
 
 // UpdateActUCOpts represents the functional options for the UpdateActUC.
@@ -73,6 +75,13 @@ func WithUpdateActRaRepository(repo rawaudio.Repository) UpdateActUCOpts {
 	}
 }
 
+// WithUpdateActProducer sets the Producer in the UpdateActUC.
+func WithUpdateActProducer(producer redpanda.Producer) UpdateActUCOpts {
+	return func(uc *UpdateActUC) {
+		uc.Producer = producer
+	}
+}
+
 // NewUpdateAct creates a new instance of UpdateActUC.
 func NewUpdateAct(opts ...UpdateActUCOpts) *UpdateActUC {
 	uc := &UpdateActUC{}
@@ -95,6 +104,9 @@ func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*Upda
 		uc.Logger.Error("Failed to update act: %v", err)
 		return nil, errors.HandleRepoError(err)
 	}
+
+	// Validar si se debe actualizar la imagen de perfil y las canciones
+	// Postear un evento para actualizar las canciones del bucket y la imagen de perfil si es el caso
 
 	uc.Logger.Info("Act updated successfully")
 	return nil, nil

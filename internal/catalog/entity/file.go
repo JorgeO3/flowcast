@@ -4,4 +4,5 @@ package entity
 type AudioFile struct {
 	Name string `json:"name"`
 	Ext  string `json:"ext"`
+	Size int    `json:"size"`
 }

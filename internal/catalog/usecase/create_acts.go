@@ -1,4 +1,4 @@
-package act
+package usecase
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
 
@@ -26,7 +27,8 @@ type CreateActsUC struct {
 	ActRepository act.Repository
 	Logger        logger.Interface
 	Validator     validator.Interface
-	RaRepository  rawaudio.Repository
+	RaRepo        rawaudio.Repository
+	Producer      redpanda.Producer
 }
 
 // CreateActsUCOpts represents the functional options for the CreateActsUC.
@@ -56,7 +58,7 @@ func WithCreateActsValidator(validator validator.Interface) CreateActsUCOpts {
 // WithCreateActsRaRepository sets the RawAudioRepository in the CreateActsUC.
 func WithCreateActsRaRepository(repo rawaudio.Repository) CreateActsUCOpts {
 	return func(uc *CreateActsUC) {
-		uc.RaRepository = repo
+		uc.RaRepo = repo
 	}
 }
 
@@ -67,6 +69,20 @@ func NewCreateActs(opts ...CreateActsUCOpts) *CreateActsUC {
 		opt(uc)
 	}
 	return uc
+}
+
+func (uc *CreateActsUC) generateManySongLinks(acts []*entity.Act) ([]SongLink, error) {
+	var songLinks []SongLink
+
+	for _, act := range acts {
+		links, err := generateSongLinks(context.Background(), act, act.ID.Hex(), uc.RaRepo)
+		if err != nil {
+			return nil, err
+		}
+		songLinks = append(songLinks, links...)
+	}
+
+	return songLinks, nil
 }
 
 // Execute executes the CreateActs use case
@@ -83,6 +99,8 @@ func (uc *CreateActsUC) Execute(ctx context.Context, input CreateActsInput) (*Cr
 		uc.Logger.Error("Error inserting acts in db: %v", err)
 		return nil, errors.HandleRepoError(err)
 	}
+
+	// Generar las urls firmadas y retornarlas al usario
 
 	return &CreateActsOutput{IDs: ids}, nil
 }

@@ -10,6 +10,18 @@ const (
 
 	// ActCollection is the name of the act collection in the database
 	ActCollection = "acts"
+
+	// CreateActTopic is the Kafka topic for act creation events.
+	CreateActTopic = "catalog.acts.created"
+
+	// UpdateActTopic is the Kafka topic for act update events.
+	UpdateActTopic = "catalog.acts.updated"
+
+	// DeleteActTopic is the Kafka topic for act deletion events.
+	DeleteActTopic = "catalog.acts.deleted"
+
+	// CreateActsTopic is the Kafka topic for bulk act creation events.
+	CreateActsTopic = "catalog.acts.bulk_created"
 )
 
 // Act represent an musical act entity
@@ -128,4 +140,13 @@ func NewAct(opts ...ActOption) *Act {
 		opt(act)
 	}
 	return act
+}
+
+// SongsLength return the total number of songs in the act
+func (a *Act) SongsLength() int {
+	length := 0
+	for _, album := range a.Albums {
+		length += len(album.Songs)
+	}
+	return length
 }

@@ -1,4 +1,4 @@
-package act
+package usecase
 
 import (
 	"context"

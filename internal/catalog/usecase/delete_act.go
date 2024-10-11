@@ -1,4 +1,4 @@
-package act
+package usecase
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -29,6 +30,7 @@ type DeleteActUC struct {
 	Logger        logger.Interface
 	Validator     validator.Interface
 	RaRepository  rawaudio.Repository
+	Producer      redpanda.Producer
 }
 
 // DeleteActOpts defines a functional option for configuring DeleteActUC.
@@ -67,6 +69,14 @@ func WithDeleteActRaRepository(repo rawaudio.Repository) DeleteActOpts {
 	}
 }
 
+// WithDeleteActProducer injects the Producer into the use case.
+// It allows the use case to produce messages to a message broker.
+func WithDeleteActProducer(prod redpanda.Producer) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.Producer = prod
+	}
+}
+
 // NewDeleteAct creates a new instance of DeleteActUC with the provided functional options.
 // This constructor promotes flexibility and decouples the use case from its dependencies,
 // making it easier to test and maintain.
@@ -95,6 +105,8 @@ func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*Dele
 		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", input.ID.Hex())
 		return nil, errors.HandleRepoError(err)
 	}
+
+	// Postear un evento para borrar las canciones del bucket
 
 	// Return an empty output indicating successful deletion.
 	return &DeleteActOutput{}, nil
