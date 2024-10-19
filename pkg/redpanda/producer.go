@@ -18,6 +18,7 @@ type RedpProducer struct {
 func NewProducer(brokers []string) (Producer, error) {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
+		kgo.ProducerBatchCompression(kgo.Lz4Compression()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka client: %w", err)

@@ -14,5 +14,12 @@ endif
 # Start the catalog service
 catalog-service:
 	@echo "Starting the catalog service..."
-	@go run -tags grpc $(cmd_directory)/catalog/main.go
+#	@go run -tags grpc $(cmd_directory)/catalog/main.go
+	@go run $(cmd_directory)/catalog/main.go
 	@echo "Catalog service is now active."
+
+# Start the transcoding service
+transcode-service:
+#	@go run -tags grpc $(cmd_directory)/transcode/main.go
+	@go run $(cmd_directory)/transcode/main.go
+	@echo "Transcoding service is now active."

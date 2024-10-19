@@ -2,13 +2,17 @@ package usecase
 
 import (
 	"context"
+	"time"
 
+	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/assets"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -22,6 +26,14 @@ type DeleteActInput struct {
 // Since deleting an act doesn't return any specific data, this struct is empty.
 type DeleteActOutput struct{}
 
+// DeleteActEvent represents the event to be posted when an act is deleted.
+type DeleteActEvent struct {
+	UserID    string    `json:"user_id"`
+	EventID   string    `json:"event_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // DeleteActUC encapsulates the use case for deleting a musical act.
 // It depends on ActRepository for data access, Logger for logging activities,
 // and Validator for input validation.
@@ -30,6 +42,7 @@ type DeleteActUC struct {
 	Logger        logger.Interface
 	Validator     validator.Interface
 	RaRepository  rawaudio.Repository
+	AssRepo       assets.Repository
 	Producer      redpanda.Producer
 }
 
@@ -66,6 +79,14 @@ func WithDeleteActValidator(val validator.Interface) DeleteActOpts {
 func WithDeleteActRaRepository(repo rawaudio.Repository) DeleteActOpts {
 	return func(uc *DeleteActUC) {
 		uc.RaRepository = repo
+	}
+}
+
+// WithDeleteActAssRepository injects the AssetsRepository into the use case.
+// It enables the use case to interact with the assets data layer for deleting acts.
+func WithDeleteActAssRepository(repo assets.Repository) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.AssRepo = repo
 	}
 }
 
@@ -107,6 +128,19 @@ func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*Dele
 	}
 
 	// Postear un evento para borrar las canciones del bucket
+	// TODO: Definir el evento para borrar las canciones del bucket
+	event := &DeleteActEvent{
+		UserID:    input.ID.Hex(),
+		EventID:   uuid.New().String(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Produce the event to notify other services about the act deletion.
+	if err := uc.Producer.Publish(event, e.DeleteActTopic); err != nil {
+		uc.Logger.Error("Failed to produce event", "error", err)
+		return nil, errors.NewInternal("error producing event", err)
+	}
 
 	// Return an empty output indicating successful deletion.
 	return &DeleteActOutput{}, nil

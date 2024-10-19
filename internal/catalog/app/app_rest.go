@@ -49,9 +49,20 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		minio.WithCredentials(cfg.RawAudioBucketAccessKey, cfg.RawAudioBucketSecretKey),
 	)
 	if err != nil {
-		logg.Fatal("minio connection error: %v", err)
+		logg.Fatal("minio rawClient connection error: %v", err)
 	}
 	raRepo := rar.NewRepository(raClient.GetClient(), cfg.RawAudioBucketName)
+
+	// Assets bucket
+	assetsClient, err := minio.New(
+		cfg.AssetsBucketURL,
+		minio.WithSSL(false),
+		minio.WithCredentials(cfg.AssetsBucketAccessKey, cfg.AssetsBucketSecretKey),
+	)
+	if err != nil {
+		logg.Fatal("minio assetsClient connection error: %v", err)
+	}
+	assetsRepo := rar.NewRepository(assetsClient.GetClient(), cfg.AssetsBucketName)
 
 	// Create a new validator for the act controller.
 	val := validator.New()
@@ -69,13 +80,16 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithCreateActValidator(val),
 		uc.WithCreateActRepository(actRepo),
 		uc.WithCreateActRARepository(raRepo),
+		uc.WithCreateActAssRepository(assetsRepo),
 	)
 
 	updateActUC := uc.NewUpdateAct(
 		uc.WithUpdateActLogger(logg),
+		uc.WithUpdateActProducer(pr),
 		uc.WithUpdateActValidator(val),
 		uc.WithUpdateActRepository(actRepo),
-		uc.WithUpdateActRaRepository(raRepo),
+		uc.WithUpdateActRawAudioRepository(raRepo),
+		uc.WithUpdateActAssetsRepository(assetsRepo),
 	)
 
 	getActByIDUC := uc.NewGetActByID(
@@ -89,6 +103,8 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithDeleteActValidator(val),
 		uc.WithDeleteActRepository(actRepo),
 		uc.WithDeleteActRaRepository(raRepo),
+		uc.WithDeleteActProducer(pr),
+		uc.WithDeleteActAssRepository(assetsRepo),
 	)
 
 	createManyUC := uc.NewCreateActs(
@@ -96,6 +112,8 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithCreateActsValidator(val),
 		uc.WithCreateActsRepository(actRepo),
 		uc.WithCreateActsRaRepository(raRepo),
+		uc.WithCreateActsProducer(pr),
+		uc.WithCreateActsAssRepository(assetsRepo),
 	)
 
 	getActsUC := uc.NewGetActs(

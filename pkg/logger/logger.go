@@ -79,24 +79,39 @@ func (l *Logger) Fatal(message string, args ...interface{}) {
 	os.Exit(1)
 }
 
+// log maneja el log en diferentes niveles, soportando mensajes formateados y campos estructurados.
 func (l *Logger) log(level zerolog.Level, message string, args ...interface{}) {
 	event := l.logger.WithLevel(level)
+
 	if len(args) > 0 {
-		// Assuming args are key-value pairs
+		// Detectar si los argumentos son pares clave-valor
 		if len(args)%2 == 0 {
 			fields := make(map[string]interface{})
+			isKeyValue := true
 			for i := 0; i < len(args); i += 2 {
-				key, ok1 := args[i].(string)
-				value := args[i+1]
-				if ok1 {
-					fields[key] = value
+				key, ok := args[i].(string)
+				if !ok {
+					isKeyValue = false
+					break
 				}
+				fields[key] = args[i+1]
 			}
-			event = event.Fields(fields)
+			if isKeyValue {
+				event = event.Fields(fields)
+			} else {
+				// Si no son pares clave-valor, asumir que son para formatear el mensaje
+				formattedMessage := fmt.Sprintf(message, args...)
+				event.Msg(formattedMessage)
+				return
+			}
 		} else {
-			event = event.Interface("details", args)
+			// Si hay un número impar de argumentos, asumir que son para formatear el mensaje
+			formattedMessage := fmt.Sprintf(message, args...)
+			event.Msg(formattedMessage)
+			return
 		}
 	}
+
 	event.Msg(message)
 }
 
@@ -132,7 +147,7 @@ func ErrorHandlingMiddleware(logg Interface) func(next http.Handler) http.Handle
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rec := recover(); rec != nil {
-					logg.Error(fmt.Sprintf("Recovered from panic: %v", rec))
+					logg.Error("Recovered from panic", "error", rec)
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				}
 			}()

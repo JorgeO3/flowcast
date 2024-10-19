@@ -24,19 +24,21 @@ const (
 	CreateActsTopic = "catalog.acts.bulk_created"
 )
 
+// Image represent an image object value
+type Image struct {
+	Name string `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
+	Ext  string `json:"ext,omitempty" bson:"ext,omitempty" validate:"required"`
+	Size int64  `json:"size,omitempty" bson:"size,omitempty" validate:"required"`
+}
+
 // Act represent an musical act entity
 type Act struct {
-	ID                primitive.ObjectID `json:"id,omitempty" bson:"_id"`
-	UserID            string             `json:"userId,omitempty" bson:"user_id,omitempty"`
-	Name              string             `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
-	Type              string             `json:"type,omitempty" bson:"type,omitempty" validate:"required,oneof='Band' 'Solo Artist' 'Duo'"`
-	Biography         string             `json:"biography,omitempty" bson:"biography,omitempty" validate:"required"`
-	FormationDate     string             `json:"formationDate,omitempty" bson:"formation_date,omitempty" validate:"required,datetime=2006-01-02"`
-	DisbandDate       string             `json:"disbandDate,omitempty" bson:"disband_date,omitempty" validate:"omitempty,datetime=2006-01-02"`
-	ProfilePictureURL string             `json:"profilePictureUrl,omitempty" bson:"profile_picture_url,omitempty" validate:"required,url"`
-	Genres            []Genre            `json:"genres,omitempty" bson:"genres,omitempty" validate:"required,dive"`
-	Albums            []Album            `json:"albums,omitempty" bson:"albums,omitempty" validate:"dive"`
-	Members           []Member           `json:"members,omitempty" bson:"members,omitempty" validate:"dive"`
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	UserID         string             `json:"userId,omitempty" bson:"user_id,omitempty"`
+	Name           string             `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
+	ProfilePicture Image              `json:"profilePictureUrl,omitempty" bson:"profile_picture_url,omitempty" validate:"required"`
+	Genres         []Genre            `json:"genres,omitempty" bson:"genres,omitempty" validate:"required,dive"`
+	Albums         []Album            `json:"albums,omitempty" bson:"albums,omitempty" validate:"dive"`
 }
 
 // ActOption represent the functional options for the act entity
@@ -77,38 +79,10 @@ func WithActName(name string) ActOption {
 	}
 }
 
-// WithActType set the type of the act
-func WithActType(actType string) ActOption {
-	return func(a *Act) {
-		a.Type = actType
-	}
-}
-
-// WithActBiography set the biography of the act
-func WithActBiography(biography string) ActOption {
-	return func(a *Act) {
-		a.Biography = biography
-	}
-}
-
-// WithActFormationDate set the formation date of the act
-func WithActFormationDate(formationDate string) ActOption {
-	return func(a *Act) {
-		a.FormationDate = formationDate
-	}
-}
-
-// WithActDisbandDate set the disband date of the act
-func WithActDisbandDate(disbandDate string) ActOption {
-	return func(a *Act) {
-		a.DisbandDate = disbandDate
-	}
-}
-
 // WithActProfilePictureURL set the profile picture URL of the act
-func WithActProfilePictureURL(profilePictureURL string) ActOption {
+func WithActProfilePictureURL(profilePicture Image) ActOption {
 	return func(a *Act) {
-		a.ProfilePictureURL = profilePictureURL
+		a.ProfilePicture = profilePicture
 	}
 }
 
@@ -123,13 +97,6 @@ func WithActGenres(genres []Genre) ActOption {
 func WithActAlbums(albums []Album) ActOption {
 	return func(a *Act) {
 		a.Albums = albums
-	}
-}
-
-// WithActMembers set the members of the act
-func WithActMembers(members []Member) ActOption {
-	return func(a *Act) {
-		a.Members = members
 	}
 }
 
@@ -149,4 +116,31 @@ func (a *Act) SongsLength() int {
 		length += len(album.Songs)
 	}
 	return length
+}
+
+// GetSongs return all the songs in the act
+func (a *Act) GetSongs() []Song {
+	songs := make([]Song, a.SongsLength())
+
+	for _, album := range a.Albums {
+		for _, song := range album.Songs {
+			songs = append(songs, song)
+		}
+	}
+
+	return songs
+}
+
+// GenerateIDs generates new ObjectIDs for the act and its albums and songs.
+//
+// NOTE: This method is only used for creating new acts
+// and should not be used for any other use case
+func (a *Act) GenerateIDs() {
+	a.ID = primitive.NewObjectID()
+	for i := range a.Albums {
+		a.Albums[i].ID = primitive.NewObjectID()
+		for j := range a.Albums[i].Songs {
+			a.Albums[i].Songs[j].ID = primitive.NewObjectID()
+		}
+	}
 }

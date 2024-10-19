@@ -39,7 +39,7 @@ func (f *Factory) CreateProducer() (Producer, error) {
 // CreateConsumer instantiates a new Consumer client for the specified topic
 // using the factory's configuration.
 // It returns a Consumer interface and any error encountered during creation.
-func (f *Factory) CreateConsumer(topic string) (Consumer, error) {
+func (f *Factory) CreateConsumer(topic []string) (Consumer, error) {
 	consumer, err := NewConsumer(f.config.Brokers, topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Consumer: %w", err)

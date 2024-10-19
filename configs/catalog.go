@@ -13,6 +13,10 @@ type CatalogConfig struct {
 	RawAudioBucketURL       string   `env:"RAW_AUDIO_BUCKET_URL"`
 	RawAudioBucketAccessKey string   `env:"RAW_AUDIO_BUCKET_ACCESS_KEY"`
 	RawAudioBucketSecretKey string   `env:"RAW_AUDIO_BUCKET_SECRET_KEY"`
+	AssetsBucketName        string   `env:"ASSETS_BUCKET_NAME"`
+	AssetsBucketURL         string   `env:"ASSETS_BUCKET_URL"`
+	AssetsBucketAccessKey   string   `env:"ASSETS_BUCKET_ACCESS_KEY"`
+	AssetsBucketSecretKey   string   `env:"ASSETS_BUCKET_SECRET_KEY"`
 	RedpandaBrokers         []string `env:"CATALOG_REPANDA_BROKERS"`
 
 	Version  string `env:"CATALOG_VERSION"`

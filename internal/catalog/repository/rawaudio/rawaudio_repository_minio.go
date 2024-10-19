@@ -8,7 +8,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-// RepositoryMinio is a repository for the
+// RepositoryMinio is a repository for the raw audio files.
 type RepositoryMinio struct {
 	client *minio.Client
 	bucket string

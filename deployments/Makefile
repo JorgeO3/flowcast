@@ -3,7 +3,6 @@
 .PHONY: start-services rebuild-services stop-services stop-all-services view-logs cleanup-docker check-status
 
 # Define paths and files specific to deployments
-deployments_directory := $(CURDIR)
 docker_compose_file := $(deployments_directory)/docker-compose.yaml
 env_file := $(deployments_directory)/.env
 

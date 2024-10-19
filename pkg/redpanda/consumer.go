@@ -12,12 +12,11 @@ import (
 // ConsumerRedp is a Redpanda implementation of the Consumer interface.
 type ConsumerRedp struct {
 	client *kgo.Client
-	topic  string
 }
 
 // NewConsumer creates a consumer that implements the Consumer interface.
 // It sets up a Kafka client with the provided brokers and topic.
-func NewConsumer(brokers []string, topic string) (Consumer, error) {
+func NewConsumer(brokers []string, topics []string) (Consumer, error) {
 	// Generate a unique group ID for this consumer instance
 	groupID := uuid.New().String()
 
@@ -25,14 +24,14 @@ func NewConsumer(brokers []string, topic string) (Consumer, error) {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup(groupID),
-		kgo.ConsumeTopics(topic),
+		kgo.ConsumeTopics(topics...),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka client: %w", err)
 	}
 
-	return &ConsumerRedp{client: client, topic: topic}, nil
+	return &ConsumerRedp{client: client}, nil
 }
 
 // Subscribe listens for messages in the topic and processes them using the provided handler.

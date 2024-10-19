@@ -18,7 +18,7 @@ services:
       start_period: 40s
 
   raw-audio-storage-service:
-    image: bitnami/minio:latest
+    image: bitnami/minio:2024.10.13
     ports:
       - ${RAW_AUDIO_STORAGE_WEB_PORT}:9000
       - ${RAW_AUDIO_STORAGE_API_PORT}:9001
@@ -29,29 +29,37 @@ services:
       MINIO_ROOT_PASSWORD: ${RAW_AUDIO_STORAGE_ROOT_PASSWORD}
       MINIO_DEFAULT_BUCKETS: ${RAW_AUDIO_STORAGE_DEFAULT_BUCKETS}
 
-  processed-audio-storage-service:
-    image: bitnami/minio:latest
+  encoded-opus-storage-service:
+    image: bitnami/minio:2024.10.13
     ports:
-      - ${PROCESSED_AUDIO_STORAGE_WEB_PORT}:9000
-      - ${PROCESSED_AUDIO_STORAGE_API_PORT}:9001
+      - ${ENCODED_OPUS_STORAGE_WEB_PORT}:9000
+      - ${ENCODED_OPUS_STORAGE_API_PORT}:9001
     volumes:
-      - ./data/minio_data:/data
+      - ${ENCODED_OPUS_STORAGE_DATA_DIR}:/data
     environment:
-      MINIO_ROOT_USER: ${PROCESSED_AUDIO_STORAGE_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${PROCESSED_AUDIO_STORAGE_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: ${PROCESSED_AUDIO_STORAGE_DEFAULT_BUCKETS}
+      MINIO_ROOT_USER: ${ENCODED_OPUS_STORAGE_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${ENCODED_OPUS_STORAGE_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: ${ENCODED_OPUS_STORAGE_DEFAULT_BUCKETS}
 
-  packaged-audio-storage-service:
-    image: bitnami/minio:latest
+  assets-storage-service:
+    image: bitnami/minio:2024.10.13
     ports:
-      - ${PACKAGED_AUDIO_STORAGE_WEB_PORT}:9000
-      - ${PACKAGED_AUDIO_STORAGE_API_PORT}:9001
+      - ${ASSETS_STORAGE_WEB_PORT}:9000
+      - ${ASSETS_STORAGE_API_PORT}:9001
     volumes:
-      - ./data/minio_data:/data
+      - ${ASSETS_STORAGE_DATA_DIR}:/data
     environment:
-      MINIO_ROOT_USER: ${PACKAGED_AUDIO_STORAGE_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${PACKAGED_AUDIO_STORAGE_ROOT_PASSWORD}
-      MINIO_DEFAULT_BUCKETS: ${PACKAGED_AUDIO_STORAGE_DEFAULT_BUCKETS}
+      MINIO_ROOT_USER: ${ASSETS_STORAGE_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${ASSETS_STORAGE_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: ${ASSETS_STORAGE_DEFAULT_BUCKETS}
+
+# Assets Storage
+# ASSETS_STORAGE_WEB_PORT=9004
+# ASSETS_STORAGE_API_PORT=9005
+# ASSETS_STORAGE_ROOT_USER=minioadmin
+# ASSETS_STORAGE_ROOT_PASSWORD=minioadmin
+# ASSETS_STORAGE_DEFAULT_BUCKETS=assets
+# ASSETS_STORAGE_DATA_DIR=./data/minio/assets
 
   redpanda:
     command:
@@ -113,24 +121,8 @@ services:
     depends_on:
       - catalog-storage-service
       - raw-audio-storage-service
-      - processed-audio-storage-service
-      - packaged-audio-storage-service
+      - encoded-opus-storage-service
       - redpanda
-
-  # song-storage-service:
-  #   image: bitnami/minio:latest
-  #   ports:
-  #     - ${SONG_STORAGE_WEB_PORT}:9000
-  #     - ${SONG_STORAGE_API_PORT}:9001
-  #   networks:
-  #     - minio_network
-  #   volumes:
-  #     - "./data/minio_data:/data"
-  #   environment:
-  #     - MINIO_ROOT_USER=${SONG_STORAGE_ROOT_USER}
-  #     - MINIO_ROOT_PASSWORD=${SONG_STORAGE_ROOT_PASSWORD}
-  #     - MINIO_DEFAULT_BUCKETS=${SONG_STORAGE_DEFAULT_BUCKETS}
-
 
 networks:
   redpanda_network:

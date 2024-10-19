@@ -1,0 +1,71 @@
+package main
+
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type Act struct {
+	ID             primitive.ObjectID `bson:"_id,omitempty"`
+	UserID         string             `bson:"user_id,omitempty"`
+	Name           string             `bson:"name"`
+	Type           string             `bson:"type"`
+	Biography      string             `bson:"biography,omitempty"`
+	FormationDate  time.Time          `bson:"formation_date"`
+	DisbandDate    *time.Time         `bson:"disband_date,omitempty"`
+	PictureURL     string             `bson:"picture_url"`
+	Genres         []Genre            `bson:"genres"`
+	MemberSummaries []MemberSummary   `bson:"member_summaries"`
+	AlbumCount     int                `bson:"album_count"`
+}
+
+type Genre struct {
+	ID   primitive.ObjectID `bson:"_id,omitempty"`
+	Name string             `bson:"name"`
+}
+
+type MemberSummary struct {
+	ID   primitive.ObjectID `bson:"_id"`
+	Name string             `bson:"name"`
+}
+
+type Album struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	ActID       primitive.ObjectID `bson:"act_id"`
+	Title       string             `bson:"title"`
+	ReleaseDate time.Time          `bson:"release_date"`
+	Genre       Genre              `bson:"genre"`
+	CoverArtURL string             `bson:"cover_art_url"`
+	TotalTracks int                `bson:"total_tracks"`
+	SongSummaries []SongSummary    `bson:"song_summaries"`
+}
+
+type SongSummary struct {
+	ID       primitive.ObjectID `bson:"_id"`
+	Title    string             `bson:"title"`
+	Duration int                `bson:"duration"`
+}
+
+type Song struct {
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	AlbumID       primitive.ObjectID `bson:"album_id"`
+	ActID         primitive.ObjectID `bson:"act_id"`
+	Title         string             `bson:"title"`
+	Genre         Genre              `bson:"genre"`
+	ReleaseDate   time.Time          `bson:"release_date"`
+	Duration      int                `bson:"duration"`
+	Explicit      bool               `bson:"explicit"`
+	AudioURL      string             `bson:"audio_url"`
+	AudioFeatures AudioFeatures      `bson:"audio_features"`
+}
+
+type AudioFeatures struct {
+	Tempo           float32 `bson:"tempo"`
+	Key             int8    `bson:"key"`
+	Mode            bool    `bson:"mode"`
+	Loudness        float32 `bson:"loudness"`
+	Energy          float32 `bson:"energy"`
+	Danceability    float32 `bson:"danceability"`
+	Instrumentalness float32 `bson:"instrumentalness"`
+}

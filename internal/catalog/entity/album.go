@@ -11,7 +11,7 @@ type Album struct {
 	Title       string             `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
 	ReleaseDate string             `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
 	Genre       Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
-	CoverArtURL string             `json:"coverarturl,omitempty" bson:"cover_art_url,omitempty" validate:"required,url"`
+	CoverArt    Image              `json:"coverarturl,omitempty" bson:"cover_art_url,omitempty" validate:"required"`
 	TotalTracks int                `json:"totaltracks,omitempty" bson:"total_tracks,omitempty" validate:"required,min=1"`
 	Songs       []Song             `json:"songs,omitempty" bson:"songs,omitempty" validate:"dive"`
 }
@@ -48,9 +48,9 @@ func WithAlbumGenre(genre Genre) AlbumOption {
 }
 
 // WithAlbumCoverArtURL set the cover art URL of the album
-func WithAlbumCoverArtURL(coverArtURL string) AlbumOption {
+func WithAlbumCoverArtURL(coverArt Image) AlbumOption {
 	return func(a *Album) {
-		a.CoverArtURL = coverArtURL
+		a.CoverArt = coverArt
 	}
 }
 

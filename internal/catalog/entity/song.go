@@ -13,9 +13,6 @@ type Song struct {
 	Genre         Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
 	ReleaseDate   string             `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
 	Duration      int                `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,min=1"`
-	Lyrics        string             `json:"lyrics,omitempty" bson:"lyrics,omitempty" validate:"required"`
-	Explicit      bool               `json:"explicit,omitempty" bson:"explicit,omitempty"`
-	Bitrates      []AudioBitrate     `json:"bitrates,omitempty" bson:"bitrates,omitempty" validate:"required,dive"`
 }
 
 // SongOption represent the functional options for the song entity
@@ -42,13 +39,6 @@ func WithSongAudioFeatures(audioFeatures AudioFeatures) SongOption {
 	}
 }
 
-// WithSongFile set the file of the song
-func WithSongFile(file AudioFile) SongOption {
-	return func(s *Song) {
-		s.File = file
-	}
-}
-
 // WithSongGenre set the genre of the song
 func WithSongGenre(genre Genre) SongOption {
 	return func(s *Song) {
@@ -67,27 +57,6 @@ func WithSongReleaseDate(releaseDate string) SongOption {
 func WithSongDuration(duration int) SongOption {
 	return func(s *Song) {
 		s.Duration = duration
-	}
-}
-
-// WithSongLyrics set the lyrics of the song
-func WithSongLyrics(lyrics string) SongOption {
-	return func(s *Song) {
-		s.Lyrics = lyrics
-	}
-}
-
-// WithSongExplicit set the explicit of the song
-func WithSongExplicit(explicit bool) SongOption {
-	return func(s *Song) {
-		s.Explicit = explicit
-	}
-}
-
-// WithSongBitrates set the bitrates of the song
-func WithSongBitrates(bitrates []AudioBitrate) SongOption {
-	return func(s *Song) {
-		s.Bitrates = bitrates
 	}
 }
 

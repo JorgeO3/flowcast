@@ -13,9 +13,10 @@ require (
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/minio/minio-go/v7 v7.0.77
 	github.com/rs/zerolog v1.33.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/twmb/franz-go v1.17.1
 	github.com/twmb/franz-go/pkg/kadm v1.13.0
-	go.mongodb.org/mongo-driver v1.16.1
+	go.mongodb.org/mongo-driver v1.17.1
 	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.34.2
@@ -23,6 +24,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
@@ -41,7 +43,7 @@ require (
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240930140551-af27646dc61f // indirect
 )

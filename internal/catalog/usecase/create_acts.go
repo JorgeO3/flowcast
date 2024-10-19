@@ -2,11 +2,14 @@ package usecase
 
 import (
 	"context"
+	"time"
 
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository/assets"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
+	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
@@ -14,12 +17,22 @@ import (
 
 // CreateActsInput represents the input for the CreateActs use case.
 type CreateActsInput struct {
-	Acts []*entity.Act `json:"acts" validate:"required,dive,required"`
+	Acts []*e.Act `json:"acts" validate:"required,dive,required"`
 }
 
 // CreateActsOutput represents the output for the CreateActs use case.
 type CreateActsOutput struct {
-	IDs []string `json:"ids"`
+	IDs       []string        `json:"ids,omitempty"`
+	SongURLs  []utils.SongURL `json:"songLinks,omitempty"`
+	ImageURLs []string        `json:"imageLinks,omitempty"`
+}
+
+// CreateActsEvent represents a song link.
+type CreateActsEvent struct {
+	UserID    string    `json:"userId"`
+	EventID   string    `json:"eventId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // CreateActsUC is the use case for creating multiple musical actors.
@@ -28,6 +41,7 @@ type CreateActsUC struct {
 	Logger        logger.Interface
 	Validator     validator.Interface
 	RaRepo        rawaudio.Repository
+	AssRepo       assets.Repository
 	Producer      redpanda.Producer
 }
 
@@ -62,6 +76,20 @@ func WithCreateActsRaRepository(repo rawaudio.Repository) CreateActsUCOpts {
 	}
 }
 
+// WithCreateActsAssRepository sets the AssetsRepository in the CreateActsUC.
+func WithCreateActsAssRepository(repo assets.Repository) CreateActsUCOpts {
+	return func(uc *CreateActsUC) {
+		uc.AssRepo = repo
+	}
+}
+
+// WithCreateActsProducer sets the producer in the CreateActsUC.
+func WithCreateActsProducer(producer redpanda.Producer) CreateActsUCOpts {
+	return func(uc *CreateActsUC) {
+		uc.Producer = producer
+	}
+}
+
 // NewCreateActs is the constructor for CreateActsUC use case
 func NewCreateActs(opts ...CreateActsUCOpts) *CreateActsUC {
 	uc := &CreateActsUC{}
@@ -69,20 +97,6 @@ func NewCreateActs(opts ...CreateActsUCOpts) *CreateActsUC {
 		opt(uc)
 	}
 	return uc
-}
-
-func (uc *CreateActsUC) generateManySongLinks(acts []*entity.Act) ([]SongLink, error) {
-	var songLinks []SongLink
-
-	for _, act := range acts {
-		links, err := generateSongLinks(context.Background(), act, act.ID.Hex(), uc.RaRepo)
-		if err != nil {
-			return nil, err
-		}
-		songLinks = append(songLinks, links...)
-	}
-
-	return songLinks, nil
 }
 
 // Execute executes the CreateActs use case
@@ -101,6 +115,30 @@ func (uc *CreateActsUC) Execute(ctx context.Context, input CreateActsInput) (*Cr
 	}
 
 	// Generar las urls firmadas y retornarlas al usario
+	songLinks, err := utils.GenerateSongURLsFromActs(ctx, input.Acts, "raw-audio/", uc.RaRepo)
+	if err != nil {
+		uc.Logger.Error("Error generating song links: %v", err)
+		return nil, err
+	}
 
-	return &CreateActsOutput{IDs: ids}, nil
+	imageURLs, err := utils.GenerateImagePresignedURLsFromActs(ctx, input.Acts, "assets/", uc.AssRepo)
+	if err != nil {
+		uc.Logger.Error("Error generating image links: %v", err)
+		return nil, err
+	}
+
+	// TODO: Definir evento de acuerdo al frontend
+	event := CreateActsEvent{
+		UserID:    "user_id",
+		EventID:   "event_id",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := uc.Producer.Publish(event, e.CreateActsTopic); err != nil {
+		uc.Logger.Error("Error producing event: %v", err)
+		return nil, err
+	}
+
+	return &CreateActsOutput{IDs: ids, SongURLs: songLinks, ImageURLs: imageURLs}, nil
 }
