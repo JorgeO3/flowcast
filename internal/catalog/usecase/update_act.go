@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
@@ -14,6 +12,7 @@ import (
 	"github.com/JorgeO3/flowcast/pkg/mongotx"
 	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
+	"github.com/google/uuid"
 )
 
 // UpdateActInput represents the input required to update a musical act.
@@ -24,9 +23,7 @@ type UpdateActInput struct {
 
 // UpdateActOutput represents the result of updating a musical act.
 type UpdateActOutput struct {
-	ID       string          `json:"id,omitempty"`
-	SongURLs []utils.SongURL `json:"songURLs,omitempty"`
-	ImageURL string          `json:"imageUrl,omitempty"`
+	AssetURLs []utils.AssetURL `json:"assetUrls,omitempty"`
 }
 
 // BaseEvent defines the common structure for all events.
@@ -39,8 +36,8 @@ type BaseEvent struct {
 // UpdateActEvent represents an event triggered after updating an act.
 type UpdateActEvent struct {
 	BaseEvent
-	DeletedSongs []string `json:"deletedSongs,omitempty"` // Names of deleted songs
-	AddedSongs   []string `json:"addedSongs,omitempty"`   // Names of added songs
+	DeletedAssets []utils.AssetChange `json:"deletedAssets"`
+	AddedAssets   []utils.AssetChange `json:"addedAssets"`
 }
 
 // UpdateActUC is the use case responsible for updating a musical act.
@@ -107,131 +104,59 @@ func NewUpdateAct(opts ...UpdateActUCOpt) *UpdateActUC {
 	return uc
 }
 
-// getSongDifferences identifies deleted and added songs between existingSongs and updatedSongs.
-func getSongDifferences(existingSongs, updatedSongs []e.Song) (deletedSongs, addedSongs []e.Song) {
-	existingSongMap := make(map[primitive.ObjectID]e.Song, len(existingSongs))
-	updatedSongMap := make(map[primitive.ObjectID]e.Song, len(updatedSongs))
-
-	// Populate existing songs map
-	for _, song := range existingSongs {
-		existingSongMap[song.ID] = song
+func (uc *UpdateActUC) handleUpdateEvent(userID string, addedAssets, deletedAssets []utils.AssetChange) error {
+	event := UpdateActEvent{
+		BaseEvent: BaseEvent{
+			EventID:   uuid.New().String(),
+			UserID:    userID,
+			CreatedAt: time.Now(),
+		},
+		DeletedAssets: deletedAssets,
+		AddedAssets:   addedAssets,
 	}
 
-	// Populate updated songs map
-	for _, song := range updatedSongs {
-		updatedSongMap[song.ID] = song
+	if err := uc.producer.Publish(event, e.UpdateActTopic); err != nil {
+		uc.logger.Error("Failed to publish event: %v", err)
+		return errors.NewInternal("failed to publish event", err)
 	}
 
-	// Identify deleted songs
-	for songID, song := range existingSongMap {
-		if _, exists := updatedSongMap[songID]; !exists {
-			deletedSongs = append(deletedSongs, song)
-		}
-	}
-
-	// Identify added songs
-	for songID, song := range updatedSongMap {
-		if _, exists := existingSongMap[songID]; !exists {
-			addedSongs = append(addedSongs, song)
-		}
-	}
-
-	return
+	return nil
 }
 
-// handleAddedSongs processes the newly added songs by generating pre-signed URLs.
-func (uc *UpdateActUC) handleAddedSongs(ctx context.Context, act *e.Act, addedSongs []e.Song) ([]utils.SongURL, error) {
-	var songURLs []utils.SongURL
-
-	// Create a map of song ID to album ID for faster lookup
-	songToAlbumMap := make(map[primitive.ObjectID]string, len(act.Albums))
-	for _, album := range act.Albums {
-		for _, song := range album.Songs {
-			songToAlbumMap[song.ID] = album.ID.Hex()
-		}
-	}
-
-	for _, song := range addedSongs {
-		albumID, exists := songToAlbumMap[song.ID]
-		if !exists {
-			uc.logger.Error("Album not found for song ID %s", song.ID.Hex())
-			return nil, errors.NewInternal("album not found for song", nil)
-		}
-
-		url, err := utils.GenerateSongPresignedURL(ctx, "audio/", act.ID.Hex(), albumID, song.ID.Hex(), uc.repos.RawAudio)
-		if err != nil {
-			uc.logger.Error("Failed to generate pre-signed URL for song ID %s: %v", song.ID.Hex(), err)
-			return nil, errors.NewInternal("failed to generate pre-signed URL", err)
-		}
-		songURLs = append(songURLs, utils.SongURL{URL: url, Name: song.File.Name})
-	}
-
-	return songURLs, nil
-}
-
-// handleDeletedSongs processes the songs that have been deleted.
-// Currently, this function is a placeholder and should be implemented as needed.
-func (uc *UpdateActUC) handleDeletedSongs(ctx context.Context, deletedSongs []e.Song) ([]utils.SongURL, error) {
-	// Implement the necessary logic to handle deleted songs.
-	// This could involve removing references, cleaning up resources, etc.
-	return nil, nil
-}
-
-// handleImageUpdate processes the profile picture update by generating a pre-signed URL if necessary.
-func (uc *UpdateActUC) handleImageUpdate(ctx context.Context, existingAct, updatedAct *e.Act) (string, error) {
-	// Check if the profile picture has changed
-	if existingAct.ProfilePicture != updatedAct.ProfilePicture && updatedAct.ProfilePicture != (e.Image{}) {
-		imageURL, err := utils.GenerateImagePresignedURL(ctx, "images/", updatedAct.ID.Hex(), uc.repos.Assets)
-		if err != nil {
-			uc.logger.Error("Failed to generate image URL: %v", err)
-			return "", errors.NewInternal("failed to generate image URL", err)
-		}
-		return imageURL, nil
-	}
-	return "", nil
-}
-
-func createSongToAlbumMap(act *e.Act) map[primitive.ObjectID]string {
-	songToAlbumMap := make(map[primitive.ObjectID]string)
-	for _, album := range act.Albums {
-		for _, song := range album.Songs {
-			songToAlbumMap[song.ID] = album.ID.Hex()
-		}
-	}
-	return songToAlbumMap
-}
-
-func (uc *UpdateActUC) updateActTransaction(ctx context.Context, input UpdateActInput) (*UpdateActOutput, error) {
-	existingAct, err := uc.repos.Act.GetActByID(ctx, input.Act.ID)
+func (uc *UpdateActUC) updateActTransaction(ctx context.Context, newAct *e.Act, ucOutput *UpdateActOutput) error {
+	oldAct, err := uc.repos.Act.GetActByID(ctx, newAct.ID)
 	if err != nil {
-		return nil, errors.HandleRepoError(err)
+		return errors.HandleRepoError(err)
 	}
 
-	deletedSongs, addedSongs := getSongDifferences(existingAct.GetSongs(), input.Act.GetSongs())
-
-	if err := uc.repos.Act.UpdateAct(ctx, &input.Act); err != nil {
-		return nil, errors.HandleRepoError(err)
-	}
-
-	imageURL, err := uc.handleImageUpdate(ctx, existingAct, &input.Act)
+	// * The Processor works as follows:
+	// * 1. Identify the changes in the assets comparing the old and new acts.
+	// * 2. Process all the changes categorizing them as added, deleted or updated assets.
+	// *  - Exists 4 types of assets: Audio, ImageAct, ImageAlbum, ImageSong.
+	// *  - For each type of asset the process is the following:
+	// * 	- For the added assets, generate the URLs.
+	// * 	- For the deleted assets, remove the assets from the storage.
+	// * 	- For the updated assets, remove the old assets and generate the URLs for the new assets.
+	// * 3. Return the output with all the necesary information for the client and audio service.
+	params := utils.NewAssetsProcessorParams(ctx, oldAct, newAct, uc.repos)
+	processor := utils.NewAssetsProcessor(params)
+	processor.IdentifyChanges()
+	output, err := processor.ProcessChanges()
 	if err != nil {
-		return nil, err
+		uc.logger.Error("Failed to process asset changes: %v", err)
+		return err
 	}
 
-	// Generate pre-signed URLs for added songs
-	songURLs, err := uc.handleAddedSongs(ctx, &input.Act, addedSongs)
-	if err != nil {
-		return nil, err
+	if err := uc.repos.Act.UpdateAct(ctx, newAct); err != nil {
+		return errors.HandleRepoError(err)
 	}
 
-	// Publish an event for the act update
-	deletedSongURLs, err := uc.handleDeletedSongs(ctx, deletedSongs)
+	if err := uc.handleUpdateEvent(newAct.UserID, output.GetAddedAssets(), output.GetDeletedAssets()); err != nil {
+		return err
+	}
 
-	return &UpdateActOutput{
-		ID:       input.Act.ID.Hex(),
-		SongURLs: songURLs,
-		ImageURL: imageURL,
-	}, nil
+	ucOutput.AssetURLs = output.GetAssetsURLs()
+	return nil
 }
 
 // Execute performs the UpdateAct use case, updating the act and handling associated changes.
@@ -244,71 +169,16 @@ func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*Upda
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	var (
-		deletedSongs []e.Song
-		addedSongs   []e.Song
-		songURLs     []utils.SongURL
-		imageURL     string
-	)
-
-	output, err := uc
-
 	// Execute the transaction to update the act
+	var output UpdateActOutput
 	err := uc.transactionMgr.Run(ctx, func(ctx context.Context) error {
-		// Retrieve the existing act from the repository
-		existingAct, err := uc.actRepo.GetActByID(ctx, input.Act.ID)
-		if err != nil {
-			uc.logger.Error("Failed to retrieve act: %v", err)
-			return errors.HandleRepoError(err)
-		}
-
-		// Identify differences between existing songs and updated songs
-		deletedSongs, addedSongs = getSongDifferences(existingAct.GetSongs(), input.Act.GetSongs())
-
-		// Update the act in the repository
-		if err := uc.actRepo.UpdateAct(ctx, &input.Act); err != nil {
-			uc.logger.Error("Failed to update act: %v", err)
-			return errors.HandleRepoError(err)
-		}
-
-		// Handle image update
-		var imgURL string
-		imgURL, err = uc.handleImageUpdate(ctx, existingAct, &input.Act)
-		if err != nil {
-			return err
-		}
-		imageURL = imgURL
-
-		return nil
+		return uc.updateActTransaction(ctx, &input.Act, &output)
 	})
-
 	if err != nil {
 		uc.logger.Error("Act update failed: %v", err)
 		return nil, err
 	}
 
-	// Handle added songs
-	if len(addedSongs) > 0 {
-		addedSongURLs, err := uc.handleAddedSongs(ctx, &input.Act, addedSongs)
-		if err != nil {
-			return nil, err
-		}
-		songURLs = append(songURLs, addedSongURLs...)
-	}
-
-	// Handle deleted songs
-	if len(deletedSongs) > 0 {
-		deletedSongURLs, err := uc.handleDeletedSongs(ctx, deletedSongs)
-		if err != nil {
-			return nil, err
-		}
-		songURLs = append(songURLs, deletedSongURLs...)
-	}
-
 	uc.logger.Info("Act updated successfully")
-	return &UpdateActOutput{
-		ID:       input.Act.ID.Hex(),
-		SongURLs: songURLs,
-		ImageURL: imageURL,
-	}, nil
+	return &output, nil
 }

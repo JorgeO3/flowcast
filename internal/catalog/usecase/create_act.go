@@ -117,7 +117,8 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 	}
 
 	act := &input.Act
-	act.GenerateIDs()
+	utils.GenerateIDs(act)
+	utils.GenerateURLs(act)
 
 	id, err := uc.ActRepository.CreateAct(ctx, act)
 	if err != nil {

@@ -1,9 +1,5 @@
 package entity
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 const (
 	// Database is the name of the database
 	Database = "catalog"
@@ -24,46 +20,18 @@ const (
 	CreateActsTopic = "catalog.acts.bulk_created"
 )
 
-// Image represent an image object value
-type Image struct {
-	Name string `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
-	Ext  string `json:"ext,omitempty" bson:"ext,omitempty" validate:"required"`
-	Size int64  `json:"size,omitempty" bson:"size,omitempty" validate:"required"`
-}
-
 // Act represent an musical act entity
 type Act struct {
-	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id"`
-	UserID         string             `json:"userId,omitempty" bson:"user_id,omitempty"`
-	Name           string             `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
-	ProfilePicture Image              `json:"profilePictureUrl,omitempty" bson:"profile_picture_url,omitempty" validate:"required"`
-	Genres         []Genre            `json:"genres,omitempty" bson:"genres,omitempty" validate:"required,dive"`
-	Albums         []Album            `json:"albums,omitempty" bson:"albums,omitempty" validate:"dive"`
+	ID             string  `json:"id,omitempty" bson:"_id,omitempty"`
+	UserID         string  `json:"userId,omitempty" bson:"user_id,omitempty"`
+	Name           string  `json:"name,omitempty" bson:"name,omitempty" validate:"required"`
+	ProfilePicture Asset   `json:"profilePictureUrl,omitempty" bson:"profile_picture_url,omitempty" validate:"required"`
+	Genres         []Genre `json:"genres,omitempty" bson:"genres,omitempty" validate:"required,dive"`
+	Albums         []Album `json:"albums,omitempty" bson:"albums,omitempty" validate:"dive"`
 }
 
 // ActOption represent the functional options for the act entity
 type ActOption func(*Act)
-
-// WithActID set the ID of the act
-func WithActID(id any) ActOption {
-	return func(a *Act) {
-		a.ID = GetObjectID(id)
-	}
-}
-
-// GetObjectID get the object ID
-func GetObjectID(id any) primitive.ObjectID {
-	if !id.(primitive.ObjectID).IsZero() {
-		return id.(primitive.ObjectID)
-	}
-
-	if id.(string) != "" {
-		if oid, err := primitive.ObjectIDFromHex(id.(string)); err == nil {
-			return oid
-		}
-	}
-	return primitive.NewObjectID()
-}
 
 // WithActUserID set the user ID of the act
 func WithActUserID(userID string) ActOption {
@@ -80,7 +48,7 @@ func WithActName(name string) ActOption {
 }
 
 // WithActProfilePictureURL set the profile picture URL of the act
-func WithActProfilePictureURL(profilePicture Image) ActOption {
+func WithActProfilePictureURL(profilePicture Asset) ActOption {
 	return func(a *Act) {
 		a.ProfilePicture = profilePicture
 	}
@@ -129,18 +97,4 @@ func (a *Act) GetSongs() []Song {
 	}
 
 	return songs
-}
-
-// GenerateIDs generates new ObjectIDs for the act and its albums and songs.
-//
-// NOTE: This method is only used for creating new acts
-// and should not be used for any other use case
-func (a *Act) GenerateIDs() {
-	a.ID = primitive.NewObjectID()
-	for i := range a.Albums {
-		a.Albums[i].ID = primitive.NewObjectID()
-		for j := range a.Albums[i].Songs {
-			a.Albums[i].Songs[j].ID = primitive.NewObjectID()
-		}
-	}
 }

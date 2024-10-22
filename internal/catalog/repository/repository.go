@@ -43,6 +43,6 @@ func (rb *Builder) WithAssetsRepository(repo assets.Repository) *Builder {
 }
 
 // Build creates the repositories.
-func (rb *Builder) Build() Repositories {
-	return rb.repos
+func (rb *Builder) Build() *Repositories {
+	return &rb.repos
 }

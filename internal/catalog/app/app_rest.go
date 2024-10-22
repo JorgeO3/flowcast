@@ -11,6 +11,7 @@ import (
 	"github.com/JorgeO3/flowcast/configs"
 	controller "github.com/JorgeO3/flowcast/internal/catalog/controller/http"
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	actr "github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	rar "github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 	uc "github.com/JorgeO3/flowcast/internal/catalog/usecase"
@@ -73,6 +74,14 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		logg.Fatal("failed to create redpanda producer: %w", err)
 	}
 
+	// Repositories
+	repos := repository.
+		NewRepositoryBuilder().
+		WithActRepository(actRepo).
+		WithAssetsRepository(assetsRepo).
+		WithRawAudioRepository(raRepo).
+		Build()
+
 	// Create the use cases for the act controller.
 	createActUC := uc.NewCreateAct(
 		uc.WithCreateActProducer(pr),
@@ -87,9 +96,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithUpdateActLogger(logg),
 		uc.WithUpdateActProducer(pr),
 		uc.WithUpdateActValidator(val),
-		uc.WithUpdateActRepository(actRepo),
-		uc.WithUpdateActRawAudioRepository(raRepo),
-		uc.WithUpdateActAssetsRepository(assetsRepo),
+		uc.WithUpdateRepositories(repos),
 	)
 
 	getActByIDUC := uc.NewGetActByID(

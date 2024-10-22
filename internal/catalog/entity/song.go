@@ -1,29 +1,19 @@
 package entity
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 // Song represent a song entity
 type Song struct {
-	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty" validate:"required"`
-	Title         string             `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
-	AudioFeatures AudioFeatures      `json:"audioFeatures,omitempty" bson:"audio_features,omitempty" validate:"required"`
-	File          AudioFile          `json:"file,omitempty" bson:"file,omitempty" validate:"required"`
-	Genre         Genre              `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
-	ReleaseDate   string             `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
-	Duration      int                `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,min=1"`
+	ID            string        `json:"id,omitempty" bson:"_id,omitempty" validate:"required"`
+	Title         string        `json:"title,omitempty" bson:"title,omitempty" validate:"required"`
+	AudioFeatures AudioFeatures `json:"audioFeatures,omitempty" bson:"audio_features,omitempty" validate:"required"`
+	File          Asset         `json:"file,omitempty" bson:"file,omitempty" validate:"required"`
+	CoverArt      Asset         `json:"coverArt,omitempty" bson:"cover_art,omitempty"`
+	Genre         Genre         `json:"genre,omitempty" bson:"genre,omitempty" validate:"required"`
+	ReleaseDate   string        `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
+	Duration      int           `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,min=1"`
 }
 
 // SongOption represent the functional options for the song entity
 type SongOption func(*Song)
-
-// WithSongID set the ID of the song
-func WithSongID(id primitive.ObjectID) SongOption {
-	return func(s *Song) {
-		s.ID = GetObjectID(id)
-	}
-}
 
 // WithSongTitle set the title of the song
 func WithSongTitle(title string) SongOption {
@@ -36,6 +26,13 @@ func WithSongTitle(title string) SongOption {
 func WithSongAudioFeatures(audioFeatures AudioFeatures) SongOption {
 	return func(s *Song) {
 		s.AudioFeatures = audioFeatures
+	}
+}
+
+// WithSongFile set the file of the song
+func WithSongFile(file Asset) SongOption {
+	return func(s *Song) {
+		s.File = file
 	}
 }
 

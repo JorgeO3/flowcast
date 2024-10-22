@@ -49,7 +49,7 @@ func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) err
 }
 
 // GetActByID implements ActRepository.
-func (m *MongoActRepository) GetActByID(ctx context.Context, id primitive.ObjectID) (*entity.Act, error) {
+func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity.Act, error) {
 	var act entity.Act
 	filter := bson.M{"_id": id}
 
@@ -82,7 +82,7 @@ func (m *MongoActRepository) CreateActs(ctx context.Context, acts []*entity.Act)
 }
 
 // DeleteAct implements ActRepository.
-func (m *MongoActRepository) DeleteAct(ctx context.Context, id primitive.ObjectID) error {
+func (m *MongoActRepository) DeleteAct(ctx context.Context, id string) error {
 	filter := bson.M{"_id": id}
 
 	if _, err := m.collection.DeleteOne(ctx, filter); err != nil {

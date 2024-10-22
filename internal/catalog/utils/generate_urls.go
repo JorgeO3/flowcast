@@ -1,103 +1,76 @@
-// Package utils provides utility functions for the catalog service.
 package utils
 
 import (
-	"context"
+	"fmt"
 	"time"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/assets"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
 )
 
-// SongURL represents a song's downloadable link.
-type SongURL struct {
-	URL  string `json:"url"`
-	Name string `json:"name"`
+const (
+	// RawAudioBucketName represents the name of the bucket for raw audio files
+	RawAudioBucketName = "raw-audio"
+	// AssetsBucketName represents the name of the bucket for assets
+	AssetsBucketName = "assets"
+
+	// URLExpirationTime represents the expiration time for the presigned URL
+	URLExpirationTime = time.Minute
+)
+
+// AssetURL represents the URL of an asset
+type AssetURL struct {
+	URL  string           `json:"url"`
+	Name string           `json:"name"`
+	Type entity.AssetType `json:"type"`
 }
 
-// GenerateImagePresignedURL generates a presigned URL for an image (e.g., album cover).
-func GenerateImagePresignedURL(ctx context.Context, bucket, actID string, assetRepo assets.Repository) (string, error) {
-	filePath := bucket + actID + "/" + ".jpg"
-	return assetRepo.GeneratePresignedURL(ctx, filePath, time.Minute)
+func generateSongFileURL(actID, albumID, songID string) string {
+	return fmt.Sprintf("/%s/%s/%s/%s.wav", RawAudioBucketName, actID, albumID, songID)
 }
 
-// GenerateImagePresignedURLsFromActs generates presigned URLs for all images in multiple acts.
-func GenerateImagePresignedURLsFromActs(ctx context.Context, acts []*entity.Act, bucket string, assetRepo assets.Repository) ([]string, error) {
-	var imageURLs []string
+func generateActPictureURL(actID string) string {
+	return fmt.Sprintf("/%s/%s.jpg", AssetsBucketName, actID)
+}
 
-	for _, act := range acts {
-		url, err := GenerateImagePresignedURL(ctx, bucket, act.ID.Hex(), assetRepo)
-		if err != nil {
-			return nil, err
-		}
+func generateAlbumCoverArtURL(actID, albumID string) string {
+	return fmt.Sprintf("/%s/%s/%s.jpg", AssetsBucketName, actID, albumID)
+}
 
-		imageURLs = append(imageURLs, url)
+func generateSongCoverArtURL(actID, albumID, songID string) string {
+	return fmt.Sprintf("/%s/%s/%s/%s.jpg", AssetsBucketName, actID, albumID, songID)
+}
+
+// GenerateURLs generates the URLs for the act and its assets
+func GenerateURLs(act *entity.Act) {
+	if !isAssetEmpty(act.ProfilePicture) {
+		act.ProfilePicture.URL = generateActPictureURL(act.ID)
 	}
-
-	return imageURLs, nil
-}
-
-// GenerateSongPresignedURL generates a presigned URL for a specific song in the catalog.
-func GenerateSongPresignedURL(ctx context.Context, bucket, actID, albumID, songID string, audioRepo rawaudio.Repository) (string, error) {
-	filePath := bucket + actID + "/" + albumID + "/" + songID + ".wav"
-	return audioRepo.GeneratePresignedURL(ctx, filePath, time.Minute)
-}
-
-// GenerateSongURLsFromAlbum generates presigned URLs for all songs in an album.
-func GenerateSongURLsFromAlbum(ctx context.Context, album *entity.Album, bucket, actID string, audioRepo rawaudio.Repository) ([]SongURL, error) {
-	songURLs := make([]SongURL, 0, len(album.Songs))
-
-	for _, song := range album.Songs {
-		if err := ValidateSongFile(&song.File); err != nil {
-			return nil, err
+	for i := range act.Albums {
+		if !isAssetEmpty(act.Albums[i].CoverArt) {
+			act.Albums[i].CoverArt.URL = generateAlbumCoverArtURL(act.ID, act.Albums[i].ID)
 		}
-
-		url, err := GenerateSongPresignedURL(ctx, bucket, actID, album.ID.Hex(), song.ID.Hex(), audioRepo)
-		if err != nil {
-			return nil, err
-		}
-
-		songURLs = append(songURLs, SongURL{URL: url, Name: song.File.Name})
-	}
-
-	return songURLs, nil
-}
-
-// GenerateSongURLsFromAct generates presigned URLs for all songs in an act (across albums).
-func GenerateSongURLsFromAct(ctx context.Context, bucket string, act *entity.Act, audioRepo rawaudio.Repository) ([]SongURL, error) {
-	songURLs := make([]SongURL, 0, act.SongsLength())
-
-	for _, album := range act.Albums {
-		for _, song := range album.Songs {
-			if err := ValidateSongFile(&song.File); err != nil {
-				return nil, errors.NewValidation("invalid file", err)
+		for j := range act.Albums[i].Songs {
+			act.Albums[i].Songs[j].File.URL = generateSongFileURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID)
+			if !isAssetEmpty(act.Albums[i].Songs[j].CoverArt) {
+				act.Albums[i].Songs[j].CoverArt.URL = generateSongCoverArtURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID)
 			}
-
-			url, err := GenerateSongPresignedURL(ctx, bucket, act.ID.Hex(), album.ID.Hex(), song.ID.Hex(), audioRepo)
-			if err != nil {
-				return nil, errors.NewInternal("error generating presigned URL", err)
-			}
-
-			songURLs = append(songURLs, SongURL{URL: url, Name: song.File.Name})
 		}
 	}
-
-	return songURLs, nil
 }
 
-// GenerateSongURLsFromActs generates presigned URLs for all songs across multiple acts.
-func GenerateSongURLsFromActs(ctx context.Context, acts []*entity.Act, bucket string, audioRepo rawaudio.Repository) ([]SongURL, error) {
-	allSongURLs := make([]SongURL, 0)
-
-	for _, act := range acts {
-		songURLs, err := GenerateSongURLsFromAct(ctx, bucket, act, audioRepo)
-		if err != nil {
-			return nil, err
-		}
-		allSongURLs = append(allSongURLs, songURLs...)
+// GenerateURLsFromActs generates the URLs for the acts and their assets
+func GenerateURLsFromActs(acts []entity.Act) {
+	for i := range acts {
+		GenerateURLs(&acts[i])
 	}
+}
 
-	return allSongURLs, nil
+// assetsEqual compara dos assets
+func assetsEqual(a1, a2 entity.Asset) bool {
+	return a1 == a2
+}
+
+// isAssetEmpty verifica si un asset es vacío (todos sus campos en cero)
+func isAssetEmpty(a entity.Asset) bool {
+	return a == entity.Asset{}
 }
