@@ -1,5 +1,7 @@
 package redpanda
 
+import "context"
+
 // BaseEvent represents a generic event structure for messaging.
 type BaseEvent interface{}
 
@@ -23,7 +25,7 @@ type Admin interface {
 type Producer interface {
 	// Publish sends an event to the configured topic.
 	// Returns an error if the publish operation fails.
-	Publish(event BaseEvent, topic string) error
+	Publish(ctx context.Context, event BaseEvent, topic string) error
 
 	// Close releases resources associated with the Producer.
 	// It's important to call this method when done using the Producer.

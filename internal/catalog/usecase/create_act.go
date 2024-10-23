@@ -7,13 +7,12 @@ import (
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/assets"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
+	"github.com/google/uuid"
 )
 
 // CreateActInput represents the input for the CreateAct use case.
@@ -23,9 +22,8 @@ type CreateActInput struct {
 
 // CreateActOutput represents the output for the CreateAct use case.
 type CreateActOutput struct {
-	ID       string          `json:"id"`
-	SongURLs []utils.SongURL `json:"songURLs"`
-	ImageURL string          `json:"imageUrl"`
+	ID     string           `json:"id"`
+	Assets []utils.AssetURL `json:"assets,omitempty"`
 }
 
 // CreateActEvent represents an audio event.
@@ -45,23 +43,14 @@ type CreateActEvent struct {
 
 // CreateActUC is the use case for creating an musical actor.
 type CreateActUC struct {
-	ActRepository act.Repository
-	Logger        logger.Interface
-	Validator     validator.Interface
-	RaRepo        rawaudio.Repository
-	AssRepo       assets.Repository
-	Producer      redpanda.Producer
+	Logger    logger.Interface
+	Validator validator.Interface
+	Producer  redpanda.Producer
+	Repos     *repository.Repositories
 }
 
 // CreateActUCOpts represents the functional options for the CreateActUC.
 type CreateActUCOpts func(uc *CreateActUC)
-
-// WithCreateActRepository sets the ActRepository in the CreateActUC.
-func WithCreateActRepository(repo act.Repository) CreateActUCOpts {
-	return func(uc *CreateActUC) {
-		uc.ActRepository = repo
-	}
-}
 
 // WithCreateActLogger sets the logger in the CreateActUC.
 func WithCreateActLogger(logger logger.Interface) CreateActUCOpts {
@@ -77,24 +66,17 @@ func WithCreateActValidator(validator validator.Interface) CreateActUCOpts {
 	}
 }
 
-// WithCreateActRARepository sets the RawAudioRepository in the CreateActUC.
-func WithCreateActRARepository(repo rawaudio.Repository) CreateActUCOpts {
-	return func(uc *CreateActUC) {
-		uc.RaRepo = repo
-	}
-}
-
-// WithCreateActAssRepository sets the AssetsRepository in the CreateActUC.
-func WithCreateActAssRepository(repo assets.Repository) CreateActUCOpts {
-	return func(uc *CreateActUC) {
-		uc.AssRepo = repo
-	}
-}
-
 // WithCreateActProducer sets the Producer in the CreateActUC.
 func WithCreateActProducer(producer redpanda.Producer) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Producer = producer
+	}
+}
+
+// WithCreateActRepos sets the Repos in the CreateActUC.
+func WithCreateActRepos(repos *repository.Repositories) CreateActUCOpts {
+	return func(uc *CreateActUC) {
+		uc.Repos = repos
 	}
 }
 
@@ -116,32 +98,33 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	act := &input.Act
-	utils.GenerateIDs(act)
-	utils.GenerateURLs(act)
+	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
+	output, err := processor.Create(&input.Act)
+	if err != nil {
+		uc.Logger.Error("Error processing assets: %v", err)
+		return nil, err
+	}
 
-	id, err := uc.ActRepository.CreateAct(ctx, act)
+	id, err := uc.Repos.Act.CreateAct(ctx, &input.Act)
 	if err != nil {
 		uc.Logger.Error("Error inserting act in db: %v", err)
 		return nil, errors.HandleRepoError(err)
 	}
 
-	// Generar URL de las canciones
-	songURLs, err := utils.GenerateSongURLsFromAct(ctx, "raw-audio/", act, uc.RaRepo)
-	if err != nil {
-		uc.Logger.Error("Error generating song links: %v", err)
-		return nil, err
-	}
-
-	// Generar URL de la imagen
-	profilePictureURL, err := utils.GenerateImagePresignedURL(ctx, "/images", act.ID.Hex(), uc.RaRepo)
-	if err != nil {
-		uc.Logger.Error("Error generating image url: %v", err)
-		return nil, errors.NewInternal("error generating image url", err)
-	}
-
+	// TODO: Finish the implementation of the event
 	// Manejar la parte del evento
+	event := CreateActEvent{
+		UserID:    input.Act.UserID,
+		EventID:   uuid.New().String(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := uc.Producer.Publish(ctx, event, e.CreateActTopic); err != nil {
+		uc.Logger.Error("Error producing event: %v", err)
+		return nil, errors.NewInternal("error producing event", err)
+	}
 
 	uc.Logger.Info("Act created successfully")
-	return &CreateActOutput{ID: id, SongURLs: songURLs, ImageURL: profilePictureURL}, nil
+	return &CreateActOutput{Assets: output.AssetsURLs, ID: id}, nil
 }

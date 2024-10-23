@@ -87,9 +87,7 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 		uc.WithCreateActProducer(pr),
 		uc.WithCreateActLogger(logg),
 		uc.WithCreateActValidator(val),
-		uc.WithCreateActRepository(actRepo),
-		uc.WithCreateActRARepository(raRepo),
-		uc.WithCreateActAssRepository(assetsRepo),
+		uc.WithCreateActRepos(repos),
 	)
 
 	updateActUC := uc.NewUpdateAct(

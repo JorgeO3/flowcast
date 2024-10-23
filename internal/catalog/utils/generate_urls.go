@@ -42,18 +42,14 @@ func generateSongCoverArtURL(actID, albumID, songID string) string {
 
 // GenerateURLs generates the URLs for the act and its assets
 func GenerateURLs(act *entity.Act) {
-	if !isAssetEmpty(act.ProfilePicture) {
-		act.ProfilePicture.URL = generateActPictureURL(act.ID)
-	}
+	setAssetURL(&act.ProfilePicture, generateActPictureURL(act.ID))
+
 	for i := range act.Albums {
-		if !isAssetEmpty(act.Albums[i].CoverArt) {
-			act.Albums[i].CoverArt.URL = generateAlbumCoverArtURL(act.ID, act.Albums[i].ID)
-		}
+		setAssetURL(&act.Albums[i].CoverArt, generateAlbumCoverArtURL(act.ID, act.Albums[i].ID))
+
 		for j := range act.Albums[i].Songs {
-			act.Albums[i].Songs[j].File.URL = generateSongFileURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID)
-			if !isAssetEmpty(act.Albums[i].Songs[j].CoverArt) {
-				act.Albums[i].Songs[j].CoverArt.URL = generateSongCoverArtURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID)
-			}
+			setAssetURL(&act.Albums[i].Songs[j].File, generateSongFileURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID))
+			setAssetURL(&act.Albums[i].Songs[j].CoverArt, generateSongCoverArtURL(act.ID, act.Albums[i].ID, act.Albums[i].Songs[j].ID))
 		}
 	}
 }
@@ -73,4 +69,11 @@ func assetsEqual(a1, a2 entity.Asset) bool {
 // isAssetEmpty verifica si un asset es vacío (todos sus campos en cero)
 func isAssetEmpty(a entity.Asset) bool {
 	return a == entity.Asset{}
+}
+
+// setAssetURL sets the URL of an asset if it is not empty
+func setAssetURL(asset *entity.Asset, url string) {
+	if !isAssetEmpty(*asset) {
+		asset.URL = url
+	}
 }

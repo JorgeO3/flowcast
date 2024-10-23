@@ -61,13 +61,15 @@ type AssetsProcessorOutput struct {
 
 // AssetsProcessor is responsible for processing changes in assets
 type AssetsProcessor struct {
-	params *AssetsProcessorParams
+	ctx   context.Context
+	repos *repository.Repositories
 }
 
 // NewAssetsProcessor is a constructor for AssetsProcessor
-func NewAssetsProcessor(params *AssetsProcessorParams) *AssetsProcessor {
+func NewAssetsProcessor(ctx context.Context, repos *repository.Repositories) *AssetsProcessor {
 	return &AssetsProcessor{
-		params: params,
+		ctx:   ctx,
+		repos: repos,
 	}
 }
 
@@ -434,23 +436,18 @@ func (processor *AssetsProcessor) handleAssets(assets []AssetChange) (*AssetsPro
 
 	for _, asset := range assets {
 		switch asset.Action {
-		case Add:
-			assetsURLs, addedAssets, err = processor.handleAddedAsset(asset, assetsURLs, addedAssets)
-			if err != nil {
-				return nil, err
-			}
-		case Update:
-			assetsURLs, addedAssets, err = processor.handleUpdatedAsset(asset, assetsURLs, addedAssets)
-			if err != nil {
-				return nil, err
-			}
 		case Delete:
 			deletedAssets, err = processor.handleDeletedAsset(asset, deletedAssets)
-			if err != nil {
-				return nil, err
-			}
+		case Add:
+			assetsURLs, addedAssets, err = processor.handleAddedAsset(asset, assetsURLs, addedAssets)
+		case Update:
+			assetsURLs, addedAssets, err = processor.handleUpdatedAsset(asset, assetsURLs, addedAssets)
 		default:
 			return nil, fmt.Errorf("unknown action: %s", asset.Action)
+		}
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -494,11 +491,11 @@ func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs
 }
 
 func (processor *AssetsProcessor) singAudioURL(path string) (string, error) {
-	return processor.params.Repos.RawAudio.GeneratePresignedURL(processor.params.Ctx, path, URLExpirationTime)
+	return processor.repos.RawAudio.GeneratePresignedURL(processor.ctx, path, URLExpirationTime)
 }
 
 func (processor *AssetsProcessor) singImageURL(path string) (string, error) {
-	return processor.params.Repos.Assets.GeneratePresignedURL(processor.params.Ctx, path, URLExpirationTime)
+	return processor.repos.Assets.GeneratePresignedURL(processor.ctx, path, URLExpirationTime)
 }
 
 // handleUpdatedAsset processes updated assets

@@ -22,9 +22,8 @@ type CreateActsInput struct {
 
 // CreateActsOutput represents the output for the CreateActs use case.
 type CreateActsOutput struct {
-	IDs       []string        `json:"ids,omitempty"`
-	SongURLs  []utils.SongURL `json:"songLinks,omitempty"`
-	ImageURLs []string        `json:"imageLinks,omitempty"`
+	IDs    []string         `json:"ids,omitempty"`
+	Assets []utils.AssetURL `json:"assets,omitempty"`
 }
 
 // CreateActsEvent represents a song link.

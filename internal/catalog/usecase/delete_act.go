@@ -6,20 +6,19 @@ import (
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/assets"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
+	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/pkg/mongotx"
 	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // DeleteActInput represents the input parameters required to delete a musical act.
 // It includes the unique identifier (ID) of the act to be deleted.
 type DeleteActInput struct {
-	ID primitive.ObjectID `json:"id,omitempty" bson:"_id" validate:"required"`
+	ID string `json:"id,omitempty" bson:"_id" validate:"required"`
 }
 
 // DeleteActOutput represents the output of the delete act use case.
@@ -38,25 +37,16 @@ type DeleteActEvent struct {
 // It depends on ActRepository for data access, Logger for logging activities,
 // and Validator for input validation.
 type DeleteActUC struct {
-	ActRepository act.Repository
-	Logger        logger.Interface
-	Validator     validator.Interface
-	RaRepository  rawaudio.Repository
-	AssRepo       assets.Repository
-	Producer      redpanda.Producer
+	Logger    logger.Interface
+	Validator validator.Interface
+	Producer  redpanda.Producer
+	Repos     *repository.Repositories
+	tx        *mongotx.MongoTx
 }
 
 // DeleteActOpts defines a functional option for configuring DeleteActUC.
 // This pattern allows for flexible and readable dependency injection.
 type DeleteActOpts func(*DeleteActUC)
-
-// WithDeleteActRepository injects the ActRepository into the use case.
-// It enables the use case to interact with the data layer for deleting acts.
-func WithDeleteActRepository(repo act.Repository) DeleteActOpts {
-	return func(uc *DeleteActUC) {
-		uc.ActRepository = repo
-	}
-}
 
 // WithDeleteActLogger injects the Logger into the use case.
 // It allows the use case to log informational, warning, and error messages.
@@ -74,27 +64,19 @@ func WithDeleteActValidator(val validator.Interface) DeleteActOpts {
 	}
 }
 
-// WithDeleteActRaRepository injects the RawAudioRepository into the use case.
-// It enables the use case to interact with the raw audio data layer for deleting acts.
-func WithDeleteActRaRepository(repo rawaudio.Repository) DeleteActOpts {
-	return func(uc *DeleteActUC) {
-		uc.RaRepository = repo
-	}
-}
-
-// WithDeleteActAssRepository injects the AssetsRepository into the use case.
-// It enables the use case to interact with the assets data layer for deleting acts.
-func WithDeleteActAssRepository(repo assets.Repository) DeleteActOpts {
-	return func(uc *DeleteActUC) {
-		uc.AssRepo = repo
-	}
-}
-
 // WithDeleteActProducer injects the Producer into the use case.
 // It allows the use case to produce messages to a message broker.
 func WithDeleteActProducer(prod redpanda.Producer) DeleteActOpts {
 	return func(uc *DeleteActUC) {
 		uc.Producer = prod
+	}
+}
+
+// WithDeleteActRepositories injects the Repositories into the use case.
+// It provides access to the data repositories needed by the use case.
+func WithDeleteActRepositories(repos *repository.Repositories) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.Repos = repos
 	}
 }
 
@@ -113,7 +95,7 @@ func NewDeleteAct(opts ...DeleteActOpts) *DeleteActUC {
 // It validates the input, deletes the act from the repository,
 // and returns the result or an appropriate error.
 func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*DeleteActOutput, error) {
-	uc.Logger.Info("Deleting act from the catalog", "id", input.ID.Hex())
+	uc.Logger.Info("Deleting act from the catalog", "id", input.ID)
 
 	// Validate input parameters to ensure required fields are present and correct.
 	if err := uc.Validator.Validate(input); err != nil {
@@ -121,23 +103,35 @@ func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*Dele
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
+	if err := uc.tx.Start(ctx); err != nil {
+		uc.Logger.Error("Failed to start transaction", "error", err)
+		return nil, errors.NewInternal("error starting transaction", err)
+	}
+
+	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
+	output, err := processor.Delete(input)
+	if err != nil {
+		uc.Logger.Error("Error processing assets", "error", err)
+		return nil, err
+	}
+
 	// Attempt to delete the act from the repository using the provided ID.
-	if err := uc.ActRepository.DeleteAct(ctx, input.ID); err != nil {
-		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", input.ID.Hex())
+	if err := uc.Repos.Act.DeleteAct(ctx, input.ID); err != nil {
+		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", input.ID)
 		return nil, errors.HandleRepoError(err)
 	}
 
 	// Postear un evento para borrar las canciones del bucket
 	// TODO: Definir el evento para borrar las canciones del bucket
 	event := &DeleteActEvent{
-		UserID:    input.ID.Hex(),
+		UserID:    input.ID,
 		EventID:   uuid.New().String(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
 	// Produce the event to notify other services about the act deletion.
-	if err := uc.Producer.Publish(event, e.DeleteActTopic); err != nil {
+	if err := uc.Producer.Publish(ctx, event, e.DeleteActTopic); err != nil {
 		uc.Logger.Error("Failed to produce event", "error", err)
 		return nil, errors.NewInternal("error producing event", err)
 	}

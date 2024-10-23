@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -29,12 +28,12 @@ func TestAssetsProcessor_AddAlbum(t *testing.T) {
 
 	// Mock de los repositorios
 	rawAudioRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
 	assetsRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
@@ -149,10 +148,7 @@ func TestAssetsProcessor_AddAlbum(t *testing.T) {
 	GenerateURLs(newAct)
 
 	// Instancia del AssetsProcessor
-	processor := NewAssetsProcessor(&AssetsProcessorParams{
-		Ctx:   ctx,
-		Repos: repos,
-	})
+	processor := NewAssetsProcessor(ctx, repos)
 
 	// Llamada al método Update
 	output, err := processor.Update(oldAct, newAct)
@@ -276,12 +272,7 @@ func TestAssetsProcessor_DeleteSong(t *testing.T) {
 	GenerateURLs(newAct)
 
 	// Instancia del AssetsProcessor
-	processor := NewAssetsProcessor(&AssetsProcessorParams{
-		Ctx:   ctx,
-		Repos: repos,
-	})
-
-	// Llamada al método Update
+	processor := NewAssetsProcessor(ctx, repos)
 	output, err := processor.Update(oldAct, newAct)
 	if err != nil {
 		t.Fatalf("Error en Update: %v", err)
@@ -307,12 +298,12 @@ func TestAssetsProcessor_UpdateAlbumCover(t *testing.T) {
 
 	// Mock de los repositorios
 	rawAudioRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
 	assetsRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
@@ -383,13 +374,8 @@ func TestAssetsProcessor_UpdateAlbumCover(t *testing.T) {
 	// Generamos las URLs para el nuevo act
 	GenerateURLs(newAct)
 
-	// Instancia del AssetsProcessor
-	processor := NewAssetsProcessor(&AssetsProcessorParams{
-		Ctx:   ctx,
-		Repos: repos,
-	})
-
 	// Llamada al método Update
+	processor := NewAssetsProcessor(ctx, repos)
 	output, err := processor.Update(oldAct, newAct)
 	if err != nil {
 		t.Fatalf("Error en Update: %v", err)
@@ -443,18 +429,11 @@ func TestAssetsProcessor_EmptyAssets(t *testing.T) {
 		},
 	}
 
-	fmt.Printf("act: %+v\n", act)
-
 	// Generamos las URLs para el act
 	GenerateURLs(act)
 
-	// Instancia del AssetsProcessor
-	processor := NewAssetsProcessor(&AssetsProcessorParams{
-		Ctx:   ctx,
-		Repos: repos,
-	})
-
 	// Llamada al método Create
+	processor := NewAssetsProcessor(ctx, repos)
 	output, err := processor.Create(act)
 	if err != nil {
 		t.Fatalf("Error en Create: %v", err)
@@ -480,12 +459,12 @@ func TestAssetsProcessor_MultipleAlbumsAndSongs(t *testing.T) {
 
 	// Mock de los repositorios
 	rawAudioRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
 	assetsRepo := &MockRepository{
-		GeneratePresignedURLFunc: func(ctx context.Context, fileName string, expiration time.Duration) (string, error) {
+		GeneratePresignedURLFunc: func(_ context.Context, fileName string, _ time.Duration) (string, error) {
 			return "https://presigned-url.com" + fileName, nil
 		},
 	}
@@ -578,13 +557,8 @@ func TestAssetsProcessor_MultipleAlbumsAndSongs(t *testing.T) {
 	// Generamos las URLs para el act
 	GenerateURLs(act)
 
-	// Instancia del AssetsProcessor
-	processor := NewAssetsProcessor(&AssetsProcessorParams{
-		Ctx:   ctx,
-		Repos: repos,
-	})
-
 	// Llamada al método Create
+	processor := NewAssetsProcessor(ctx, repos)
 	output, err := processor.Create(act)
 	if err != nil {
 		t.Fatalf("Error en Create: %v", err)

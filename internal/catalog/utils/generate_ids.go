@@ -11,17 +11,17 @@ func genID() string {
 
 // GenerateIDs generates the IDs for the act and its assets
 func GenerateIDs(act *entity.Act) {
-	if !IsStructEmpty(act) && act.ID == "" {
+	if !IsActEmpty(act) && act.ID == "" {
 		act.ID = genID()
 	}
 
 	for i := range act.Albums {
-		if !IsStructEmpty(act.Albums[i]) && act.Albums[i].ID == "" {
+		if !IsAlbumEmpty(&act.Albums[i]) && act.Albums[i].ID == "" {
 			act.Albums[i].ID = genID()
 		}
 
 		for j := range act.Albums[i].Songs {
-			if !IsStructEmpty(act.Albums[i].Songs[j]) && act.Albums[i].Songs[j].ID == "" {
+			if !IsSongEmpty(&act.Albums[i].Songs[j]) && act.Albums[i].Songs[j].ID == "" {
 				act.Albums[i].Songs[j].ID = genID()
 			}
 		}
@@ -36,6 +36,36 @@ func GenerateIDsFromActs(acts []entity.Act) {
 }
 
 // IsActEmpty checks if the act is empty
-func IsActEmpty(act entity.Act) bool {
-	return act.ID == "" && act.
+func IsActEmpty(act *entity.Act) bool {
+	return act == nil ||
+		act.ID == "" ||
+		act.Name == "" ||
+		act.Albums == nil ||
+		act.Genres == nil ||
+		act.ProfilePicture == entity.Asset{} ||
+		act.UserID == ""
+}
+
+// IsAlbumEmpty checks if the album is empty
+func IsAlbumEmpty(album *entity.Album) bool {
+	return album == nil ||
+		album.ID == "" ||
+		album.Title == "" ||
+		album.ReleaseDate == "" ||
+		album.Genre == entity.Genre{} ||
+		album.CoverArt == entity.Asset{} ||
+		album.TotalTracks == 0 ||
+		album.Songs == nil
+}
+
+// IsSongEmpty checks if the song is empty
+func IsSongEmpty(song *entity.Song) bool {
+	return song == nil ||
+		song.ID == "" ||
+		song.Title == "" ||
+		song.AudioFeatures == entity.AudioFeatures{} ||
+		song.File == entity.Asset{} ||
+		song.Genre == entity.Genre{} ||
+		song.ReleaseDate == "" ||
+		song.Duration == 0
 }
