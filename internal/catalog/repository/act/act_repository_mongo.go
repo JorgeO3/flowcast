@@ -62,10 +62,10 @@ func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity
 }
 
 // CreateActs implements ActRepository.
-func (m *MongoActRepository) CreateActs(ctx context.Context, acts []*entity.Act) ([]string, error) {
+func (m *MongoActRepository) CreateActs(ctx context.Context, acts []entity.Act) ([]string, error) {
 	var docs []interface{}
-	for _, act := range acts {
-		docs = append(docs, act)
+	for i := range acts {
+		docs = append(docs, &acts[i])
 	}
 
 	res, err := m.collection.InsertMany(ctx, docs)

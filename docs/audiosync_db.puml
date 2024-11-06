@@ -1,0 +1,23 @@
+@startuml
+title ♫ Flowcast: Audio Processing DB
+
+entity AudioProcessing {
+  * audio_id : String
+  --
+  act_id : String
+  album_id : String
+  song_id : String
+  file_path : String
+  name : String
+  act_name : String
+  album_name : String
+  cover_art_url : String
+  status : String
+  processing_start_time : DateTime
+  processing_end_time : DateTime
+  error_message : String
+  event_id : String
+  created_at : DateTime
+}
+
+@enduml

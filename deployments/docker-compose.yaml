@@ -53,13 +53,16 @@ services:
       MINIO_ROOT_PASSWORD: ${ASSETS_STORAGE_ROOT_PASSWORD}
       MINIO_DEFAULT_BUCKETS: ${ASSETS_STORAGE_DEFAULT_BUCKETS}
 
-# Assets Storage
-# ASSETS_STORAGE_WEB_PORT=9004
-# ASSETS_STORAGE_API_PORT=9005
-# ASSETS_STORAGE_ROOT_USER=minioadmin
-# ASSETS_STORAGE_ROOT_PASSWORD=minioadmin
-# ASSETS_STORAGE_DEFAULT_BUCKETS=assets
-# ASSETS_STORAGE_DATA_DIR=./data/minio/assets
+  audsync-storage-service:
+    image: postgres:16.4-bookworm
+    ports:
+      - ${SYNC_STORAGE_PORT}:5432
+    environment:
+      POSTGRES_USER: ${SYNC_STORAGE_USER}
+      POSTGRES_PASSWORD: ${SYNC_STORAGE_PASSWORD}
+      POSTGRES_DB: ${SYNC_STORAGE_DB}
+    volumes:
+      - ${SYNC_STORAGE_DATA_DIR}:/var/lib/postgresql/data
 
   redpanda:
     command:

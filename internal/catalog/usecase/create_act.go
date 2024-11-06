@@ -22,23 +22,33 @@ type CreateActInput struct {
 
 // CreateActOutput represents the output for the CreateAct use case.
 type CreateActOutput struct {
-	ID     string           `json:"id"`
-	Assets []utils.AssetURL `json:"assets,omitempty"`
+	AssetsURLs       []utils.AssetURL    `json:"assets,omitempty"`
+	ProcessingAssets []AudioServiceAsset `json:"processingAssets,omitempty"`
+}
+
+// AudioServiceAsset represents a asset in the audio service.
+type AudioServiceAsset struct {
+	EntityType          string    `json:"entityType"`
+	AlbumID             string    `json:"albumId"`
+	AlbumName           string    `json:"albumName"`
+	SongID              string    `json:"songId"`
+	AssetID             string    `json:"assetId"`
+	FilePath            string    `json:"filePath"`
+	AssetType           string    `json:"assetType"`
+	AssetName           string    `json:"assetName"`
+	Status              string    `json:"status"`
+	ProcessingStartTime time.Time `json:"processingStartTime"`
+	ProcessingEndTime   time.Time `json:"processingEndTime"`
+	ErrorMsg            string    `json:"errorMsg"`
+	UserID              string    `json:"userId"`
+	ActID               string    `json:"actId"`
+	ActName             string    `json:"actName"`
 }
 
 // CreateActEvent represents an audio event.
 type CreateActEvent struct {
-	UserID              string            `json:"userId"`
-	EventID             string            `json:"eventId"`
-	CreatedAt           time.Time         `json:"createdAt"`
-	UpdatedAt           time.Time         `json:"updatedAt"`
-	FileName            string            `json:"fileName"`
-	FileSize            int64             `json:"fileSize"`
-	FileType            string            `json:"fileType"`
-	SourceLocation      string            `json:"sourceLocation"`
-	DestinationLocation string            `json:"destinationLocation"`
-	ProcessingState     string            `json:"processingState"`
-	Metadata            map[string]string `json:"metadata"`
+	EventID string              `json:"eventId"`
+	Assets  []AudioServiceAsset `json:"assets"`
 }
 
 // CreateActUC is the use case for creating an musical actor.
@@ -89,6 +99,30 @@ func NewCreateAct(opts ...CreateActUCOpts) *CreateActUC {
 	return uc
 }
 
+func handleCreatedAssets(output *utils.AssetsProcessorOutput) []AudioServiceAsset {
+	createdAssets := make([]AudioServiceAsset, len(output.DeletedAssets))
+	for _, asset := range output.DeletedAssets {
+		createdAssets = append(createdAssets, AudioServiceAsset{
+			UserID:              asset.UserID,
+			ActID:               asset.ActID,
+			ActName:             asset.ActName,
+			AlbumID:             asset.AlbumID,
+			SongID:              asset.SongID,
+			AssetID:             uuid.New().String(),
+			AssetType:           string(asset.Type),
+			AssetName:           asset.NewAsset.Name,
+			AlbumName:           asset.AlbumName,
+			EntityType:          string(asset.EntityType),
+			Status:              "processing",
+			ProcessingStartTime: time.Now(),
+			ProcessingEndTime:   time.Now(),
+			FilePath:            asset.NewAsset.URL,
+			ErrorMsg:            "",
+		})
+	}
+	return createdAssets
+}
+
 // Execute executes the CreateAct use case.
 func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*CreateActOutput, error) {
 	uc.Logger.Info("Creating a new musical act")
@@ -98,6 +132,11 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
+	if _, err := uc.Repos.Act.CreateAct(ctx, &input.Act); err != nil {
+		uc.Logger.Error("Error inserting act in db: %v", err)
+		return nil, errors.HandleRepoError(err)
+	}
+
 	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
 	output, err := processor.Create(&input.Act)
 	if err != nil {
@@ -105,19 +144,12 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 		return nil, err
 	}
 
-	id, err := uc.Repos.Act.CreateAct(ctx, &input.Act)
-	if err != nil {
-		uc.Logger.Error("Error inserting act in db: %v", err)
-		return nil, errors.HandleRepoError(err)
-	}
+	createdAssets := handleCreatedAssets(output)
 
-	// TODO: Finish the implementation of the event
-	// Manejar la parte del evento
+	// Create Act event
 	event := CreateActEvent{
-		UserID:    input.Act.UserID,
-		EventID:   uuid.New().String(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		EventID: uuid.New().String(),
+		Assets:  createdAssets,
 	}
 
 	if err := uc.Producer.Publish(ctx, event, e.CreateActTopic); err != nil {
@@ -126,5 +158,8 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 	}
 
 	uc.Logger.Info("Act created successfully")
-	return &CreateActOutput{Assets: output.AssetsURLs, ID: id}, nil
+	return &CreateActOutput{
+		ProcessingAssets: createdAssets,
+		AssetsURLs:       output.AssetsURLs,
+	}, nil
 }

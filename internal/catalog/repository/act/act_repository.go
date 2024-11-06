@@ -10,7 +10,7 @@ import (
 // Repository represent the act repository contract
 type Repository interface {
 	CreateAct(context.Context, *entity.Act) (string, error)
-	CreateActs(context.Context, []*entity.Act) ([]string, error)
+	CreateActs(context.Context, []entity.Act) ([]string, error)
 	UpdateAct(context.Context, *entity.Act) error
 	DeleteAct(context.Context, string) error
 	GetActByID(context.Context, string) (*entity.Act, error)

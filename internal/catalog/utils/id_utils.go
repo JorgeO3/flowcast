@@ -69,3 +69,12 @@ func IsSongEmpty(song *entity.Song) bool {
 		song.ReleaseDate == "" ||
 		song.Duration == 0
 }
+
+// GetUserIDs returns the user IDs from the acts
+func GetUserIDs(acts []entity.Act) []string {
+	var userIDs []string
+	for i := range acts {
+		userIDs = append(userIDs, acts[i].UserID)
+	}
+	return userIDs
+}

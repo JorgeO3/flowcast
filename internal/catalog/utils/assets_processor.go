@@ -4,6 +4,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
@@ -36,14 +37,17 @@ const (
 // AssetChange represents a change in an asset
 type AssetChange struct {
 	Action     Action
+	UserID     string
 	ActID      string
+	ActName    string
 	AlbumID    string
+	AlbumName  string
 	SongID     string
 	Type       entity.AssetType
 	EntityType EntityType
 	EntityID   string
-	OldAsset   entity.Asset
-	NewAsset   entity.Asset
+	OldAsset   *entity.Asset
+	NewAsset   *entity.Asset
 }
 
 // AssetsProcessorParams represents the parameters needed by the AssetsProcessor
@@ -75,43 +79,72 @@ func NewAssetsProcessor(ctx context.Context, repos *repository.Repositories) *As
 
 // Create processes assets for the creation of an Act
 func (processor *AssetsProcessor) Create(act *entity.Act) (*AssetsProcessorOutput, error) {
-	return processor.processAssets(nil, act)
+	assets, err := processor.processAssets(nil, act)
+	if err != nil {
+		return nil, err
+	}
+
+	return processor.handleAssets(assets)
+}
+
+// CreateMany processes assets for the creation of multiple Acts
+func (processor *AssetsProcessor) CreateMany(acts []entity.Act) (*AssetsProcessorOutput, error) {
+	var changedAssets []AssetChange
+
+	for _, act := range acts {
+		assets, err := processor.processAssets(nil, &act)
+		if err != nil {
+			return nil, err
+		}
+
+		changedAssets = slices.Grow(changedAssets, len(assets))
+		changedAssets = append(changedAssets, assets...)
+	}
+
+	return processor.handleAssets(changedAssets)
 }
 
 // Update processes assets for updating an Act
 func (processor *AssetsProcessor) Update(oldAct, newAct *entity.Act) (*AssetsProcessorOutput, error) {
-	return processor.processAssets(oldAct, newAct)
+	assets, err := processor.processAssets(oldAct, newAct)
+	if err != nil {
+		return nil, err
+	}
+
+	return processor.handleAssets(assets)
 }
 
 // Delete processes assets for the deletion of an Act
 func (processor *AssetsProcessor) Delete(act *entity.Act) (*AssetsProcessorOutput, error) {
-	return processor.processAssets(act, nil)
+	assets, err := processor.processAssets(act, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return processor.handleAssets(assets)
 }
 
 // processAssets handles the processing of assets for create, update, and delete operations
-func (processor *AssetsProcessor) processAssets(oldAct, newAct *entity.Act) (*AssetsProcessorOutput, error) {
+func (processor *AssetsProcessor) processAssets(oldAct, newAct *entity.Act) ([]AssetChange, error) {
 	var assetsToProcess []AssetChange
 
 	if oldAct == nil && newAct != nil {
+		// Creating a new Act
 		GenerateIDs(newAct)
-		// Generate URLs for the new Act
 		GenerateURLs(newAct)
-		// Creation
 		assetsToProcess = processor.collectAssetsForCreation(newAct)
 	} else if newAct == nil && oldAct != nil {
-		// Deletion
+		// Deleting a new act
 		assetsToProcess = processor.collectAssetsForDeletion(oldAct)
 	} else if newAct != nil && oldAct != nil {
-		// Generate URLs for the new Act
+		// Updating an existing act
 		GenerateURLs(newAct)
-		// Update
 		assetsToProcess = processor.collectAssetsForUpdate(oldAct, newAct)
 	} else {
 		return nil, fmt.Errorf("invalid input: both newAct and oldAct are nil")
 	}
 
-	// Process the collected assets
-	return processor.handleAssets(assetsToProcess)
+	return assetsToProcess, nil
 }
 
 // collectAssetsForCreation collects assets for creation
@@ -124,15 +157,17 @@ func (processor *AssetsProcessor) collectAssetsForCreation(act *entity.Act) []As
 			Action:     Add,
 			EntityType: Act,
 			ActID:      act.ID,
+			UserID:     act.UserID,
+			ActName:    act.Name,
 			EntityID:   act.ID,
 			Type:       act.ProfilePicture.Type,
-			NewAsset:   act.ProfilePicture,
+			NewAsset:   &act.ProfilePicture,
 		})
 	}
 
 	// Albums and songs
 	for _, album := range act.Albums {
-		assets = append(assets, processor.collectAlbumAssetsForCreation(act.ID, album)...)
+		assets = append(assets, processor.collectAlbumAssetsForCreation(act, album)...)
 	}
 
 	return assets
@@ -146,17 +181,18 @@ func (processor *AssetsProcessor) collectAssetsForDeletion(act *entity.Act) []As
 	if !isAssetEmpty(act.ProfilePicture) {
 		assets = append(assets, AssetChange{
 			Action:     Delete,
+			UserID:     act.UserID,
 			EntityType: Act,
 			ActID:      act.ID,
 			EntityID:   act.ID,
 			Type:       act.ProfilePicture.Type,
-			OldAsset:   act.ProfilePicture,
+			OldAsset:   &act.ProfilePicture,
 		})
 	}
 
 	// Albums and songs
 	for _, album := range act.Albums {
-		assets = append(assets, processor.collectAlbumAssetsForDeletion(act.ID, album)...)
+		assets = append(assets, processor.collectAlbumAssetsForDeletion(act, album)...)
 	}
 
 	return assets
@@ -172,10 +208,11 @@ func (processor *AssetsProcessor) collectAssetsForUpdate(oldAct, newAct *entity.
 			Action:     Update,
 			EntityType: Act,
 			ActID:      newAct.ID,
+			UserID:     newAct.UserID,
 			EntityID:   newAct.ID,
 			Type:       newAct.ProfilePicture.Type,
-			NewAsset:   newAct.ProfilePicture,
-			OldAsset:   oldAct.ProfilePicture,
+			NewAsset:   &newAct.ProfilePicture,
+			OldAsset:   &oldAct.ProfilePicture,
 		})
 	}
 
@@ -186,7 +223,7 @@ func (processor *AssetsProcessor) collectAssetsForUpdate(oldAct, newAct *entity.
 }
 
 // collectAlbumAssetsForCreation collects album assets for creation
-func (processor *AssetsProcessor) collectAlbumAssetsForCreation(actID string, album entity.Album) []AssetChange {
+func (processor *AssetsProcessor) collectAlbumAssetsForCreation(act *entity.Act, album entity.Album) []AssetChange {
 	var assets []AssetChange
 
 	// Album cover art
@@ -194,11 +231,12 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(actID string, al
 		assets = append(assets, AssetChange{
 			Action:     Add,
 			EntityType: Album,
-			ActID:      actID,
+			ActID:      act.ID,
+			UserID:     act.UserID,
 			AlbumID:    album.ID,
 			EntityID:   album.ID,
 			Type:       album.CoverArt.Type,
-			NewAsset:   album.CoverArt,
+			NewAsset:   &album.CoverArt,
 		})
 	}
 
@@ -209,12 +247,13 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(actID string, al
 			assets = append(assets, AssetChange{
 				Action:     Add,
 				EntityType: Song,
-				ActID:      actID,
+				ActID:      act.ID,
+				UserID:     act.UserID,
 				AlbumID:    album.ID,
 				SongID:     song.ID,
 				EntityID:   song.ID,
 				Type:       song.File.Type,
-				NewAsset:   song.File,
+				NewAsset:   &song.File,
 			})
 		}
 
@@ -223,12 +262,13 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(actID string, al
 			assets = append(assets, AssetChange{
 				Action:     Add,
 				EntityType: Song,
-				ActID:      actID,
+				ActID:      act.ID,
+				UserID:     act.UserID,
 				AlbumID:    album.ID,
 				SongID:     song.ID,
 				EntityID:   song.ID,
 				Type:       song.CoverArt.Type,
-				NewAsset:   song.CoverArt,
+				NewAsset:   &song.CoverArt,
 			})
 		}
 	}
@@ -237,7 +277,7 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(actID string, al
 }
 
 // collectAlbumAssetsForDeletion collects album assets for deletion
-func (processor *AssetsProcessor) collectAlbumAssetsForDeletion(actID string, album entity.Album) []AssetChange {
+func (processor *AssetsProcessor) collectAlbumAssetsForDeletion(act *entity.Act, album entity.Album) []AssetChange {
 	var assets []AssetChange
 
 	// Album cover art
@@ -245,17 +285,18 @@ func (processor *AssetsProcessor) collectAlbumAssetsForDeletion(actID string, al
 		assets = append(assets, AssetChange{
 			Action:     Delete,
 			EntityType: Album,
-			ActID:      actID,
+			UserID:     act.UserID,
+			ActID:      act.ID,
 			AlbumID:    album.ID,
 			EntityID:   album.ID,
 			Type:       album.CoverArt.Type,
-			OldAsset:   album.CoverArt,
+			OldAsset:   &album.CoverArt,
 		})
 	}
 
 	// Songs
 	for _, song := range album.Songs {
-		assets = append(assets, processor.collectSongAssetsForDeletion(actID, album.ID, song)...)
+		assets = append(assets, processor.collectSongAssetsForDeletion(act, album.ID, song)...)
 	}
 
 	return assets
@@ -273,7 +314,7 @@ func (processor *AssetsProcessor) compareAlbums(oldAct, newAct *entity.Act) []As
 		oldAlbum, exists := oldAlbumMap[newAlbum.ID]
 		if !exists {
 			// New album
-			assets = append(assets, processor.collectAlbumAssetsForCreation(newAct.ID, newAlbum)...)
+			assets = append(assets, processor.collectAlbumAssetsForCreation(newAct, newAlbum)...)
 			continue
 		}
 
@@ -283,23 +324,24 @@ func (processor *AssetsProcessor) compareAlbums(oldAct, newAct *entity.Act) []As
 				Action:     Update,
 				EntityType: Album,
 				ActID:      newAct.ID,
+				UserID:     newAct.UserID,
 				AlbumID:    newAlbum.ID,
 				EntityID:   newAlbum.ID,
 				Type:       newAlbum.CoverArt.Type,
-				NewAsset:   newAlbum.CoverArt,
-				OldAsset:   oldAlbum.CoverArt,
+				NewAsset:   &newAlbum.CoverArt,
+				OldAsset:   &oldAlbum.CoverArt,
 			})
 		}
 
 		// Songs
-		assets = append(assets, processor.compareSongs(newAct.ID, oldAlbum, newAlbum)...)
+		assets = append(assets, processor.compareSongs(newAct, oldAlbum, newAlbum)...)
 	}
 
 	// Albums deleted
 	for _, oldAlbum := range oldAct.Albums {
 		if _, exists := newAlbumMap[oldAlbum.ID]; !exists {
 			// Deleted album
-			assets = append(assets, processor.collectAlbumAssetsForDeletion(oldAct.ID, oldAlbum)...)
+			assets = append(assets, processor.collectAlbumAssetsForDeletion(oldAct, oldAlbum)...)
 		}
 	}
 
@@ -307,7 +349,7 @@ func (processor *AssetsProcessor) compareAlbums(oldAct, newAct *entity.Act) []As
 }
 
 // compareSongs compares songs between the old and new album
-func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum entity.Album) []AssetChange {
+func (processor *AssetsProcessor) compareSongs(act *entity.Act, oldAlbum, newAlbum entity.Album) []AssetChange {
 	var assets []AssetChange
 
 	oldSongMap := generateSongMap(oldAlbum.Songs)
@@ -318,7 +360,7 @@ func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum 
 		oldSong, exists := oldSongMap[newSong.ID]
 		if !exists {
 			// New song
-			assets = append(assets, processor.collectSongAssetsForCreation(actID, newAlbum.ID, newSong)...)
+			assets = append(assets, processor.collectSongAssetsForCreation(act, newAlbum.ID, newSong)...)
 			continue
 		}
 
@@ -327,13 +369,14 @@ func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum 
 			assets = append(assets, AssetChange{
 				Action:     Update,
 				EntityType: Song,
-				ActID:      actID,
+				ActID:      act.ID,
+				UserID:     act.UserID,
 				AlbumID:    newAlbum.ID,
 				SongID:     newSong.ID,
 				EntityID:   newSong.ID,
 				Type:       newSong.File.Type,
-				NewAsset:   newSong.File,
-				OldAsset:   oldSong.File,
+				NewAsset:   &newSong.File,
+				OldAsset:   &oldSong.File,
 			})
 		}
 
@@ -342,13 +385,14 @@ func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum 
 			assets = append(assets, AssetChange{
 				Action:     Update,
 				EntityType: Song,
-				ActID:      actID,
+				ActID:      act.ID,
+				UserID:     act.UserID,
 				AlbumID:    newAlbum.ID,
 				SongID:     newSong.ID,
 				EntityID:   newSong.ID,
 				Type:       newSong.CoverArt.Type,
-				NewAsset:   newSong.CoverArt,
-				OldAsset:   oldSong.CoverArt,
+				NewAsset:   &newSong.CoverArt,
+				OldAsset:   &oldSong.CoverArt,
 			})
 		}
 	}
@@ -357,7 +401,7 @@ func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum 
 	for _, oldSong := range oldAlbum.Songs {
 		if _, exists := newSongMap[oldSong.ID]; !exists {
 			// Deleted song
-			assets = append(assets, processor.collectSongAssetsForDeletion(actID, oldAlbum.ID, oldSong)...)
+			assets = append(assets, processor.collectSongAssetsForDeletion(act, oldAlbum.ID, oldSong)...)
 		}
 	}
 
@@ -365,30 +409,32 @@ func (processor *AssetsProcessor) compareSongs(actID string, oldAlbum, newAlbum 
 }
 
 // collectSongAssetsForCreation collects song assets for creation
-func (processor *AssetsProcessor) collectSongAssetsForCreation(actID, albumID string, song entity.Song) []AssetChange {
+func (processor *AssetsProcessor) collectSongAssetsForCreation(act *entity.Act, albumID string, song entity.Song) []AssetChange {
 	var assets []AssetChange
 
 	assets = append(assets, AssetChange{
 		Action:     Add,
 		EntityType: Song,
-		ActID:      actID,
+		ActID:      act.ID,
+		UserID:     act.UserID,
 		AlbumID:    albumID,
 		SongID:     song.ID,
 		EntityID:   song.ID,
 		Type:       song.File.Type,
-		NewAsset:   song.File,
+		NewAsset:   &song.File,
 	})
 	// If the song has cover art
 	if !isAssetEmpty(song.CoverArt) {
 		assets = append(assets, AssetChange{
 			Action:     Add,
 			EntityType: Song,
-			ActID:      actID,
+			ActID:      act.ID,
+			UserID:     act.UserID,
 			AlbumID:    albumID,
 			SongID:     song.ID,
 			EntityID:   song.ID,
 			Type:       song.CoverArt.Type,
-			NewAsset:   song.CoverArt,
+			NewAsset:   &song.CoverArt,
 		})
 	}
 
@@ -396,45 +442,52 @@ func (processor *AssetsProcessor) collectSongAssetsForCreation(actID, albumID st
 }
 
 // collectSongAssetsForDeletion collects song assets for deletion
-func (processor *AssetsProcessor) collectSongAssetsForDeletion(actID, albumID string, song entity.Song) []AssetChange {
+func (processor *AssetsProcessor) collectSongAssetsForDeletion(act *entity.Act, albumID string, song entity.Song) []AssetChange {
 	var assets []AssetChange
 
 	assets = append(assets, AssetChange{
 		Action:     Delete,
 		EntityType: Song,
-		ActID:      actID,
+		ActID:      act.ID,
+		UserID:     act.UserID,
 		AlbumID:    albumID,
 		SongID:     song.ID,
 		EntityID:   song.ID,
 		Type:       song.File.Type,
-		OldAsset:   song.File,
+		OldAsset:   &song.File,
 	})
 	// If the song has cover art
 	if !isAssetEmpty(song.CoverArt) {
 		assets = append(assets, AssetChange{
 			Action:     Delete,
 			EntityType: Song,
-			ActID:      actID,
+			ActID:      act.ID,
+			UserID:     act.UserID,
 			AlbumID:    albumID,
 			SongID:     song.ID,
 			EntityID:   song.ID,
 			Type:       song.CoverArt.Type,
-			OldAsset:   song.CoverArt,
+			OldAsset:   &song.CoverArt,
 		})
 	}
 
 	return assets
 }
 
+// FIXME: This solution is not scalable. We need to find a better way to compare assets.
 // handleAssets processes the collected assets
 func (processor *AssetsProcessor) handleAssets(assets []AssetChange) (*AssetsProcessorOutput, error) {
+	var assetsURLs []AssetURL
 	var addedAssets []AssetChange
 	var deletedAssets []AssetChange
-	var assetsURLs []AssetURL
 
-	var err error
+	// TODO: Refactor this switch statement with a map of functions
+	// TODO: Standardize the input and output of the functions
+	// var GetHandler = map[Action]func(AssetChange) ([]AssetURL, []AssetChange, error){}
 
 	for _, asset := range assets {
+		var err error
+
 		switch asset.Action {
 		case Delete:
 			deletedAssets, err = processor.handleDeletedAsset(asset, deletedAssets)
@@ -458,6 +511,7 @@ func (processor *AssetsProcessor) handleAssets(assets []AssetChange) (*AssetsPro
 	}, nil
 }
 
+// FIXME: This code can be
 // handleAddedAsset processes added assets
 func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs []AssetURL, addedAssets []AssetChange) ([]AssetURL, []AssetChange, error) {
 	// Generate a presigned URL for uploading the file

@@ -7,17 +7,17 @@ ifneq (,$(wildcard ./.env))
 endif
 
 # Define root path and other directory paths
-project_root := $(CURDIR)
-go_root_path := gitlab.com/JorgeO3/flowcast
+export project_root := $(CURDIR)
+export go_root_path := gitlab.com/JorgeO3/flowcast
 
-songs_directory := $(project_root)/songs
-scripts_directory := $(project_root)/scripts
-deployments_directory := $(project_root)/deployments
-frontend_directory := $(project_root)/frontend
-backend_directory := $(project_root)/backend
-cmd_directory := $(project_root)/cmd
-migrations_directory := $(project_root)/migrations
-assets_directory := $(project_root)/assets
+export songs_directory := $(project_root)/songs
+export scripts_directory := $(project_root)/scripts
+export deployments_directory := $(project_root)/deployments
+export frontend_directory := $(project_root)/frontend
+export backend_directory := $(project_root)/backend
+export cmd_directory := $(project_root)/cmd
+export migrations_directory := $(project_root)/migrations
+export assets_directory := $(project_root)/assets
 
 # Common commands
 deno_command := deno run -A

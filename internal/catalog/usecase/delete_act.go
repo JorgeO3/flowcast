@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"time"
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
@@ -27,10 +26,8 @@ type DeleteActOutput struct{}
 
 // DeleteActEvent represents the event to be posted when an act is deleted.
 type DeleteActEvent struct {
-	UserID    string    `json:"user_id"`
-	EventID   string    `json:"event_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	EventID string   `json:"eventId"`
+	Assets  []string `json:"assets"`
 }
 
 // DeleteActUC encapsulates the use case for deleting a musical act.
@@ -91,6 +88,32 @@ func NewDeleteAct(opts ...DeleteActOpts) *DeleteActUC {
 	return uc
 }
 
+func (uc *DeleteActUC) handleDelete(ctx context.Context, id string) (*e.Act, error) {
+
+	// Get the act from the repository using the provided ID.
+	act, err := uc.Repos.Act.GetActByID(ctx, id)
+	if err != nil {
+		uc.Logger.Error("Failed to get act from repository", "error", err, "id", id)
+		return nil, errors.HandleRepoError(err)
+	}
+
+	// Attempt to delete the act from the repository using the provided ID.
+	if err := uc.Repos.Act.DeleteAct(ctx, id); err != nil {
+		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", id)
+		return nil, errors.HandleRepoError(err)
+	}
+
+	return act, nil
+}
+
+func getAssetIDs(assets []AudioServiceAsset) []string {
+	assetIDs := make([]string, len(assets))
+	for i, asset := range assets {
+		assetIDs[i] = asset.AssetID
+	}
+	return assetIDs
+}
+
 // Execute performs the use case to delete a musical act.
 // It validates the input, deletes the act from the repository,
 // and returns the result or an appropriate error.
@@ -103,31 +126,28 @@ func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*Dele
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	if err := uc.tx.Start(ctx); err != nil {
+	var act *e.Act
+	var err error
+	err = uc.tx.Run(ctx, func(ctx context.Context) error {
+		act, err = uc.handleDelete(ctx, input.ID)
+		return err
+	})
+
+	if err != nil {
 		uc.Logger.Error("Failed to start transaction", "error", err)
 		return nil, errors.NewInternal("error starting transaction", err)
 	}
 
 	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
-	output, err := processor.Delete(input)
+	output, err := processor.Delete(act)
 	if err != nil {
 		uc.Logger.Error("Error processing assets", "error", err)
 		return nil, err
 	}
 
-	// Attempt to delete the act from the repository using the provided ID.
-	if err := uc.Repos.Act.DeleteAct(ctx, input.ID); err != nil {
-		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", input.ID)
-		return nil, errors.HandleRepoError(err)
-	}
-
-	// Postear un evento para borrar las canciones del bucket
-	// TODO: Definir el evento para borrar las canciones del bucket
+	ids := getAssetIDs(output.DeletedAssets)
 	event := &DeleteActEvent{
-		UserID:    input.ID,
-		EventID:   uuid.New().String(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		EventID: uuid.New().String(),
 	}
 
 	// Produce the event to notify other services about the act deletion.

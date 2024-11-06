@@ -3,7 +3,10 @@ package redpanda
 import "context"
 
 // BaseEvent represents a generic event structure for messaging.
-type BaseEvent interface{}
+type BaseEvent struct {
+	Type string `json:"type"`
+	Data []byte `json:"data"`
+}
 
 // Admin defines the interface for administrative operations on Redpanda.
 type Admin interface {

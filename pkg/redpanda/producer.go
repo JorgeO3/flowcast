@@ -28,9 +28,7 @@ func NewProducer(brokers []string) (Producer, error) {
 
 // Publish sends an event to the specified topic.
 // It serializes the event to JSON before sending.
-func (p *RedpProducer) Publish(event BaseEvent, topic string) error {
-	ctx := context.Background()
-
+func (p *RedpProducer) Publish(ctx context.Context, event BaseEvent, topic string) error {
 	// Serialize the event to JSON
 	b, err := json.Marshal(event)
 	if err != nil {

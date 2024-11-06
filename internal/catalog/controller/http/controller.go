@@ -2,12 +2,11 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/JorgeO3/flowcast/configs"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	act "github.com/JorgeO3/flowcast/internal/catalog/usecase"
+	"github.com/JorgeO3/flowcast/internal/catalog/usecase"
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,12 +14,12 @@ import (
 
 // Controller handles HTTP requests for the catalog service and delegates operations to use cases.
 type Controller struct {
-	GetActsUC    *act.GetActsUC
-	DeleteActUC  *act.DeleteActUC
-	CreateActUC  *act.CreateActUC
-	UpdateActUC  *act.UpdateActUC
-	GetActByIDUC *act.GetActByIDUC
-	CreateManyUC *act.CreateActsUC
+	GetActsUC    *usecase.GetActsUC
+	DeleteActUC  *usecase.DeleteActUC
+	CreateActUC  *usecase.CreateActUC
+	UpdateActUC  *usecase.UpdateActUC
+	GetActByIDUC *usecase.GetActByIDUC
+	CreateManyUC *usecase.CreateActsUC
 
 	Logger logger.Interface
 	Cfg    *configs.CatalogConfig
@@ -33,7 +32,7 @@ func (c *Controller) CreateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input act.CreateActInput
+	var input usecase.CreateActInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}
@@ -55,7 +54,7 @@ func (c *Controller) UpdateAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input act.UpdateActInput
+	var input usecase.UpdateActInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}
@@ -83,7 +82,7 @@ func (c *Controller) GetAct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := c.GetActByIDUC.Execute(ctx, act.GetActByIDInput{ID: id})
+	output, err := c.GetActByIDUC.Execute(ctx, usecase.GetActByIDInput{ID: id})
 	if err != nil {
 		c.Logger.Error("Error executing GetActByID use case - err %v", err)
 		c.handleError(w, err)
@@ -108,9 +107,7 @@ func (c *Controller) GetActs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(limit, offset, genre)
-
-	input := act.GetActsInput{
+	input := usecase.GetActsInput{
 		Limit:  limit,
 		Offset: offset,
 		Genre:  genre,
@@ -132,15 +129,8 @@ func (c *Controller) DeleteAct(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	idParam := chi.URLParam(r, "id")
-	id, err := primitive.ObjectIDFromHex(idParam)
-	if err != nil {
-		c.Logger.Error("Invalid ID format - id: %s, error: %v", idParam, err)
-		c.handleError(w, errors.NewBadRequest("Invalid ID format", err))
-		return
-	}
-
-	output, err := c.DeleteActUC.Execute(ctx, act.DeleteActInput{ID: id})
+	id := chi.URLParam(r, "id")
+	output, err := c.DeleteActUC.Execute(ctx, usecase.DeleteActInput{ID: id})
 	if err != nil {
 		c.Logger.Error("Error executing DeleteAct use case - err %v", err)
 		c.handleError(w, err)
@@ -157,7 +147,7 @@ func (c *Controller) CreateMany(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := c.withTimeout(r)
 	defer cancel()
 
-	var input act.CreateActsInput
+	var input usecase.CreateActsInput
 	if !c.decodeJSON(w, r, &input) {
 		return
 	}

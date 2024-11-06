@@ -17,7 +17,7 @@ type CatalogConfig struct {
 	AssetsBucketURL         string   `env:"ASSETS_BUCKET_URL"`
 	AssetsBucketAccessKey   string   `env:"ASSETS_BUCKET_ACCESS_KEY"`
 	AssetsBucketSecretKey   string   `env:"ASSETS_BUCKET_SECRET_KEY"`
-	RedpandaBrokers         []string `env:"CATALOG_REPANDA_BROKERS"`
+	RedpandaBrokers         []string `env:"REPANDA_BROKERS"`
 
 	Version  string `env:"CATALOG_VERSION"`
 	LogLevel string `env:"CATALOG_LOG_LEVEL"`
