@@ -2,7 +2,6 @@ package redpanda
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -35,7 +34,7 @@ func NewConsumer(brokers []string, topics []string) (Consumer, error) {
 }
 
 // Subscribe listens for messages in the topic and processes them using the provided handler.
-func (c *ConsumerRedp) Subscribe(handler func(BaseEvent)) error {
+func (c *ConsumerRedp) Subscribe(handler func([]byte) error) error {
 	ctx := context.Background()
 
 	for {
@@ -48,21 +47,16 @@ func (c *ConsumerRedp) Subscribe(handler func(BaseEvent)) error {
 		for !iter.Done() {
 			record := iter.Next()
 
-			var event BaseEvent
-			if err := json.Unmarshal(record.Value, &event); err != nil {
-				// Log the error and continue processing other messages
-				fmt.Printf("Error decoding message: %v\n", err)
+			// * NOTE: The deserialized message is handled by the provided handler function.
+			if err := handler(record.Value); err != nil {
+				fmt.Printf("Error processing message: %v\n", err)
 				continue
 			}
-
-			// Process the event using the provided handler
-			handler(event)
 		}
 	}
 }
 
 // Close gracefully shuts down the consumer and releases associated resources.
-func (c *ConsumerRedp) Close() error {
+func (c *ConsumerRedp) Close() {
 	c.client.Close()
-	return nil
 }

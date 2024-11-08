@@ -7,8 +7,7 @@ import (
 // AudsyncConfig holds the configuration for the audsync service.
 type AudsyncConfig struct {
 	AppName                      string   `env:"AUDSYNC_APP_NAME"`
-	Host                         string   `env:"AUDSYNC_HOST"`
-	Port                         string   `env:"AUDSYNC_PORT"`
+	HTTPAddr                     string   `env:"AUDSYNC_HTTP_ADDR"`
 	Version                      string   `env:"AUDSYNC_VERSION"`
 	LogLevel                     string   `env:"AUDSYNC_LOG_LEVEL"`
 	DBName                       string   `env:"AUDSYNC_DB_NAME"`

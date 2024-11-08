@@ -4,14 +4,16 @@ package audprocess
 import (
 	"context"
 
+	"github.com/JorgeO3/flowcast/internal/audsync/events"
 	"github.com/JorgeO3/flowcast/internal/audsync/repository"
 	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
 
 // UpdateProcessInput holds the input data for the UpdateProcessUC usecase
-type UpdateProcessInput struct{}
+type UpdateProcessInput struct {
+	events.UpdateAudioProcessingsEvent
+}
 
 // UpdateProcessOutput holds the output data for the UpdateProcessUC usecase
 type UpdateProcessOutput struct{}
@@ -20,7 +22,6 @@ type UpdateProcessOutput struct{}
 type UpdateProcessUC struct {
 	Logger    logger.Interface
 	Validator validator.Interface
-	Consumer  redpanda.Consumer
 	Repos     *repository.Repositories
 }
 
@@ -38,13 +39,6 @@ func WithUpdateProcessLogger(logger logger.Interface) UpdateProcessUCOpts {
 func WithUpdateProcessValidator(validator validator.Interface) UpdateProcessUCOpts {
 	return func(cp *UpdateProcessUC) {
 		cp.Validator = validator
-	}
-}
-
-// WithUpdateProcessConsumer sets the consumer in the UpdateProcessUC usecase
-func WithUpdateProcessConsumer(consumer redpanda.Consumer) UpdateProcessUCOpts {
-	return func(cp *UpdateProcessUC) {
-		cp.Consumer = consumer
 	}
 }
 

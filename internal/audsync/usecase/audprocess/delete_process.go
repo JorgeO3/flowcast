@@ -3,15 +3,15 @@ package audprocess
 import (
 	"context"
 
+	"github.com/JorgeO3/flowcast/internal/audsync/events"
 	"github.com/JorgeO3/flowcast/internal/audsync/repository"
 	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
 
 // DeleteProcessInput holds the input data for the DeleteProcessUC usecase
 type DeleteProcessInput struct {
-	ID string
+	events.DeleteAudioProcessingsEvent
 }
 
 // DeleteProcessOutput holds the output data for the DeleteProcessUC usecase
@@ -21,7 +21,6 @@ type DeleteProcessOutput struct{}
 type DeleteProcessUC struct {
 	Logger    logger.Interface
 	Validator validator.Interface
-	Consumer  redpanda.Consumer
 	Repos     *repository.Repositories
 }
 
@@ -39,13 +38,6 @@ func WithDeleteProcessLogger(logger logger.Interface) DeleteProcessUCOpts {
 func WithDeleteProcessValidator(validator validator.Interface) DeleteProcessUCOpts {
 	return func(cp *DeleteProcessUC) {
 		cp.Validator = validator
-	}
-}
-
-// WithDeleteProcessConsumer sets the consumer in the DeleteProcessUC usecase
-func WithDeleteProcessConsumer(consumer redpanda.Consumer) DeleteProcessUCOpts {
-	return func(cp *DeleteProcessUC) {
-		cp.Consumer = consumer
 	}
 }
 

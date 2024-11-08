@@ -6,6 +6,7 @@ import (
 
 	"github.com/JorgeO3/flowcast/configs"
 	hc "github.com/JorgeO3/flowcast/internal/audsync/controller/http"
+	"github.com/JorgeO3/flowcast/internal/audsync/infrastructure/kafka"
 	"github.com/JorgeO3/flowcast/internal/audsync/repository"
 	"github.com/JorgeO3/flowcast/internal/audsync/repository/assets"
 	"github.com/JorgeO3/flowcast/internal/audsync/repository/audprocess"
@@ -18,7 +19,6 @@ import (
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/minio"
 	"github.com/JorgeO3/flowcast/pkg/postgres"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/txmanager"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
@@ -38,7 +38,7 @@ func Run(cfg *configs.AudsyncConfig, logg logger.Interface) {
 	pg.RunMigrations(cfg.DBMigrations, cfg.DBName)
 
 	// Start transaction manager
-	txManager := txmanager.New(pg.Pool)
+	_ = txmanager.New(pg.Pool)
 
 	// Assets bucket
 	assetsClient, err := minio.New(
@@ -62,12 +62,6 @@ func Run(cfg *configs.AudsyncConfig, logg logger.Interface) {
 	}
 	transcodaudioRepo := assets.NewRepository(transcodedAudioClient.GetClient(), cfg.TranscodaudioBucketName)
 
-	// Redpanda Consumer
-	consumer, err := redpanda.NewConsumer(cfg.RedpandaBrokers, []string{"audprocess"})
-	if err != nil {
-		logg.Fatal("redpanda consumer connection error: %v", err)
-	}
-
 	// Audprocess repository
 	audprocessRepo := audprocess.NewRepository(pg)
 
@@ -84,44 +78,50 @@ func Run(cfg *configs.AudsyncConfig, logg logger.Interface) {
 	createProcessUC := apuc.NewCreateProcessUC(
 		apuc.WithCreateProcessLogger(logg),
 		apuc.WithCreateProcessRepos(repos),
-		apuc.WithCreateProcessConsumer(consumer),
 		apuc.WithCreateProcessValidator(validator),
 	)
 
 	deleteProcessUC := apuc.NewDeleteProcessUC(
 		apuc.WithDeleteProcessLogger(logg),
 		apuc.WithDeleteProcessRepos(repos),
-		apuc.WithDeleteProcessConsumer(consumer),
 		apuc.WithDeleteProcessValidator(validator),
 	)
 
-	getAProcessUC := apuc.NewGetManyProcessUC(
+	getManyProcessUC := apuc.NewGetManyProcessUC(
 		apuc.WithGetManyProcessLogger(logg),
 		apuc.WithGetManyProcessRepos(repos),
-		apuc.WithGetManyProcessConsumer(consumer),
 		apuc.WithGetManyProcessValidator(validator),
 	)
 
 	getProcessesUC := apuc.NewGetProcessUC(
 		apuc.WithGetProcessLogger(logg),
 		apuc.WithGetProcessRepos(repos),
-		apuc.WithGetProcessConsumer(consumer),
 		apuc.WithGetProcessValidator(validator),
 	)
 
 	updateProcessUC := apuc.NewUpdateProcessUC(
 		apuc.WithUpdateProcessLogger(logg),
 		apuc.WithUpdateProcessRepos(repos),
-		apuc.WithUpdateProcessConsumer(consumer),
 		apuc.WithUpdateProcessValidator(validator),
 	)
 
+	// Kafka Consumer
+	consumer, err := kafka.NewConsumer(
+		cfg.RedpandaBrokers,
+		[]string{"audprocess"},
+		kafka.WithConsumerConfig(cfg),
+		kafka.WithConsumerLogger(logg),
+		kafka.WithConsumerCreateProcessUC(createProcessUC),
+		kafka.WithConsumerUpdateProcessUC(updateProcessUC),
+		kafka.WithConsumerDeleteProcessUC(deleteProcessUC),
+	)
+	if err != nil {
+		logg.Fatal("kafka consumer connection error: %v", err)
+	}
+
 	controller := hc.Controller{
-		GetManyProcessUC: getAProcessUC,
+		GetManyProcessUC: getManyProcessUC,
 		GetProcessUC:     getProcessesUC,
-		CreateProcessUC:  createProcessUC,
-		DeleteProcessUC:  deleteProcessUC,
-		UpdateProcessUC:  updateProcessUC,
 		Logger:           logg,
 		Cfg:              cfg,
 	}
@@ -151,9 +151,18 @@ func Run(cfg *configs.AudsyncConfig, logg logger.Interface) {
 	r.Route("/process", func(r chi.Router) {
 		r.Get("/", controller.GetManyProcess)
 		r.Get("/{id}", controller.GetProcess)
-		r.Post("/", controller.CreateProcess)
-		r.Put("/{id}", controller.UpdateProcess)
-		r.Delete("/{id}", controller.DeleteProcess)
 	})
 
+	orchestrator := NewOrchestrator(15*time.Second, logg)
+
+	httpServer := NewHTTPServer(cfg.HTTPAddr, r, logg)
+	orchestrator.AddService(httpServer)
+
+	kafkaService := NewKafkaConsumerService(consumer, logg)
+	orchestrator.AddService(kafkaService)
+
+	// Iniciar todos los servicios y manejar el shutdown
+	if err := orchestrator.Start(); err != nil {
+		logg.Fatal("Service orchestration failed", err)
+	}
 }

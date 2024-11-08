@@ -5,7 +5,6 @@ import (
 
 	"github.com/JorgeO3/flowcast/internal/audsync/repository"
 	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 )
 
@@ -21,7 +20,6 @@ type GetProcessOutput struct{}
 type GetProcessUC struct {
 	Logger    logger.Interface
 	Validator validator.Interface
-	Consumer  redpanda.Consumer
 	Repos     *repository.Repositories
 }
 
@@ -39,13 +37,6 @@ func WithGetProcessLogger(logger logger.Interface) GetProcessUCOpts {
 func WithGetProcessValidator(validator validator.Interface) GetProcessUCOpts {
 	return func(cp *GetProcessUC) {
 		cp.Validator = validator
-	}
-}
-
-// WithGetProcessConsumer sets the consumer in the GetProcessUC usecase
-func WithGetProcessConsumer(consumer redpanda.Consumer) GetProcessUCOpts {
-	return func(cp *GetProcessUC) {
-		cp.Consumer = consumer
 	}
 }
 

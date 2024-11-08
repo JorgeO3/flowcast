@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/JorgeO3/flowcast/configs"
-	"github.com/JorgeO3/flowcast/internal/audsync/errors"
 	e "github.com/JorgeO3/flowcast/internal/audsync/errors"
 	apuc "github.com/JorgeO3/flowcast/internal/audsync/usecase/audprocess"
 	"github.com/JorgeO3/flowcast/pkg/logger"
@@ -15,9 +14,6 @@ import (
 // Controller is the http controller for the audsync service
 type Controller struct {
 	GetProcessUC     *apuc.GetProcessUC
-	CreateProcessUC  *apuc.CreateProcessUC
-	UpdateProcessUC  *apuc.UpdateProcessUC
-	DeleteProcessUC  *apuc.DeleteProcessUC
 	GetManyProcessUC *apuc.GetManyProcessUC
 
 	Logger logger.Interface
@@ -56,7 +52,7 @@ func (c *Controller) GetManyProcess(w http.ResponseWriter, r *http.Request) {
 	limit, offset, err := parsePaginationParams(query)
 	if err != nil {
 		c.Logger.Error("Invalid pagination parameters - err %v", err)
-		c.handleError(w, errors.NewBadRequest("Invalid pagination parameters", err))
+		c.handleError(w, e.NewBadRequest("Invalid pagination parameters", err))
 		return
 	}
 
@@ -76,64 +72,64 @@ func (c *Controller) GetManyProcess(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateProcess execute the CreateProcess use case
-func (c *Controller) CreateProcess(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := c.withTimeout(r)
-	defer cancel()
+// func (c *Controller) CreateProcess(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := c.withTimeout(r)
+// 	defer cancel()
 
-	var input apuc.CreateProcessInput
-	if !c.decodeJSON(w, r, &input) {
-		return
-	}
+// 	var input apuc.CreateProcessInput
+// 	if !c.decodeJSON(w, r, &input) {
+// 		return
+// 	}
 
-	output, err := c.CreateProcessUC.Execute(ctx, &input)
-	if err != nil {
-		c.Logger.Error("Error executing CreateProcess use case - err", err)
-		c.handleError(w, err)
-		return
-	}
+// 	output, err := c.CreateProcessUC.Execute(ctx, &input)
+// 	if err != nil {
+// 		c.Logger.Error("Error executing CreateProcess use case - err", err)
+// 		c.handleError(w, err)
+// 		return
+// 	}
 
-	c.respondJSON(w, output)
-}
+// 	c.respondJSON(w, output)
+// }
 
 // UpdateProcess execute the UpdateProcess use case
-func (c *Controller) UpdateProcess(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := c.withTimeout(r)
-	defer cancel()
+// func (c *Controller) UpdateProcess(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := c.withTimeout(r)
+// 	defer cancel()
 
-	var input apuc.UpdateProcessInput
-	if !c.decodeJSON(w, r, &input) {
-		return
-	}
+// 	var input apuc.UpdateProcessInput
+// 	if !c.decodeJSON(w, r, &input) {
+// 		return
+// 	}
 
-	output, err := c.UpdateProcessUC.Execute(ctx, &input)
-	if err != nil {
-		c.Logger.Error("Error executing UpdateProcess use case - err", err)
-		c.handleError(w, err)
-		return
-	}
+// 	output, err := c.UpdateProcessUC.Execute(ctx, &input)
+// 	if err != nil {
+// 		c.Logger.Error("Error executing UpdateProcess use case - err", err)
+// 		c.handleError(w, err)
+// 		return
+// 	}
 
-	c.respondJSON(w, output)
-}
+// 	c.respondJSON(w, output)
+// }
 
 // DeleteProcess execute the DeleteProcess use case
-func (c *Controller) DeleteProcess(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := c.withTimeout(r)
-	defer cancel()
+// func (c *Controller) DeleteProcess(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := c.withTimeout(r)
+// 	defer cancel()
 
-	id := chi.URLParam(r, "id")
-	if id == "" {
-		c.Logger.Error("Invalid ID format - id: %s", id)
-		c.handleError(w, e.NewValidation("Invalid ID format", nil))
-		return
-	}
+// 	id := chi.URLParam(r, "id")
+// 	if id == "" {
+// 		c.Logger.Error("Invalid ID format - id: %s", id)
+// 		c.handleError(w, e.NewValidation("Invalid ID format", nil))
+// 		return
+// 	}
 
-	input := &apuc.DeleteProcessInput{ID: id}
-	output, err := c.DeleteProcessUC.Execute(ctx, input)
-	if err != nil {
-		c.Logger.Error("Error executing DeleteProcess use case - err", err)
-		c.handleError(w, err)
-		return
-	}
+// 	input := &apuc.DeleteProcessInput{ID: id}
+// 	output, err := c.DeleteProcessUC.Execute(ctx, input)
+// 	if err != nil {
+// 		c.Logger.Error("Error executing DeleteProcess use case - err", err)
+// 		c.handleError(w, err)
+// 		return
+// 	}
 
-	c.respondJSON(w, output)
-}
+// 	c.respondJSON(w, output)
+// }

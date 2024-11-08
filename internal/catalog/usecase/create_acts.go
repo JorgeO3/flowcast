@@ -6,6 +6,7 @@ import (
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
+	"github.com/JorgeO3/flowcast/internal/catalog/events"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
@@ -34,11 +35,13 @@ type CreateActsEvent struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// TODO: Fix the redpanda producer generic type
+
 // CreateActsUC is the use case for creating multiple musical actors.
 type CreateActsUC struct {
 	Logger    logger.Interface
 	Validator validator.Interface
-	Producer  redpanda.Producer
+	Producer  redpanda.Producer[events.BaseAudioEvent]
 	Repos     *repository.Repositories
 }
 
@@ -59,10 +62,19 @@ func WithCreateActsValidator(validator validator.Interface) CreateActsUCOpts {
 	}
 }
 
+// TODO: Fix the redpanda producer generic type
+
 // WithCreateActsProducer sets the producer in the CreateActsUC.
-func WithCreateActsProducer(producer redpanda.Producer) CreateActsUCOpts {
+func WithCreateActsProducer(producer redpanda.Producer[events.BaseAudioEvent]) CreateActsUCOpts {
 	return func(uc *CreateActsUC) {
 		uc.Producer = producer
+	}
+}
+
+// WithCreateActsRepos sets the repositories in the CreateActsUC.
+func WithCreateActsRepos(repos *repository.Repositories) CreateActsUCOpts {
+	return func(uc *CreateActsUC) {
+		uc.Repos = repos
 	}
 }
 

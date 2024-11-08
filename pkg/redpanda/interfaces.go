@@ -28,7 +28,7 @@ type Admin interface {
 type Producer interface {
 	// Publish sends an event to the configured topic.
 	// Returns an error if the publish operation fails.
-	Publish(ctx context.Context, event BaseEvent, topic string) error
+	Publish(ctx context.Context, event any, topic string) error
 
 	// Close releases resources associated with the Producer.
 	// It's important to call this method when done using the Producer.
@@ -40,9 +40,9 @@ type Consumer interface {
 	// Subscribe starts consuming events from the configured topic.
 	// The provided handler function is called for each received event.
 	// This method blocks until an error occurs or the consumer is closed.
-	Subscribe(handler func(BaseEvent)) error
+	Subscribe(handler func([]byte) error) error
 
 	// Close stops the consumer and releases associated resources.
 	// It's important to call this method when done using the Consumer.
-	Close() error
+	Close()
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/JorgeO3/flowcast/configs"
 	controller "github.com/JorgeO3/flowcast/internal/catalog/controller/http"
 	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalog/infrastructure/kafka"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	actr "github.com/JorgeO3/flowcast/internal/catalog/repository/act"
 	rar "github.com/JorgeO3/flowcast/internal/catalog/repository/rawaudio"
@@ -19,7 +20,6 @@ import (
 	"github.com/JorgeO3/flowcast/pkg/logger"
 	"github.com/JorgeO3/flowcast/pkg/minio"
 	"github.com/JorgeO3/flowcast/pkg/mongodb"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -68,8 +68,11 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	// Create a new validator for the act controller.
 	val := validator.New()
 
-	// Create the redpanda producer for the act controller.
-	pr, err := redpanda.NewProducer(cfg.RedpandaBrokers)
+	pr, err := kafka.NewProducer(
+		cfg.RedpandaBrokers,
+		kafka.WithProducerConfig(cfg),
+		kafka.WithProducerLogger(logg),
+	)
 	if err != nil {
 		logg.Fatal("failed to create redpanda producer: %w", err)
 	}
@@ -106,19 +109,15 @@ func Run(cfg *configs.CatalogConfig, logg logger.Interface) {
 	deleteActUC := uc.NewDeleteAct(
 		uc.WithDeleteActLogger(logg),
 		uc.WithDeleteActValidator(val),
-		uc.WithDeleteActRepository(actRepo),
-		uc.WithDeleteActRaRepository(raRepo),
 		uc.WithDeleteActProducer(pr),
-		uc.WithDeleteActAssRepository(assetsRepo),
+		uc.WithDeleteActRepositories(repos),
 	)
 
 	createManyUC := uc.NewCreateActs(
 		uc.WithCreateActsLogger(logg),
 		uc.WithCreateActsValidator(val),
-		uc.WithCreateActsRepository(actRepo),
-		uc.WithCreateActsRaRepository(raRepo),
 		uc.WithCreateActsProducer(pr),
-		uc.WithCreateActsAssRepository(assetsRepo),
+		uc.WithCreateActsRepos(repos),
 	)
 
 	getActsUC := uc.NewGetActs(

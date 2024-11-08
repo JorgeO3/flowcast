@@ -6,6 +6,7 @@ import (
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
+	"github.com/JorgeO3/flowcast/internal/catalog/infrastructure/kafka"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
@@ -46,7 +47,7 @@ type UpdateActUC struct {
 	logger    logger.Interface
 	validator validator.Interface
 
-	producer       redpanda.Producer
+	producer       *kafka.Producer
 	transactionMgr mongotx.TxManager
 }
 

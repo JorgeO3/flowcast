@@ -1,3 +1,5 @@
+//go:build !grcp
+
 // Package grpc provides the gRPC Controller for the catalog service.
 package grpc
 
@@ -22,7 +24,6 @@ type Controller struct {
 	CreateActUC  *uc.CreateActUC
 	UpdateActUC  *uc.UpdateActUC
 	GetActByIDUC *uc.GetActByIDUC
-	CreateManyUC *uc.CreateManyUC
 
 	Logger logger.Interface
 	Cfg    *configs.CatalogConfig
@@ -44,7 +45,7 @@ func (c *Controller) CreateAct(ctx context.Context, in *pb.CreateActRequest) (*p
 		return nil, c.handleError(err)
 	}
 
-	return &pb.CreateActResponse{Id: output.ID}, nil
+	return &pb.CreateActResponse{Id: output.}, nil
 }
 
 // UpdateAct handles updating an existing act.

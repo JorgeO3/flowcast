@@ -7,10 +7,10 @@ import (
 
 	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
 	"github.com/JorgeO3/flowcast/internal/catalog/errors"
+	"github.com/JorgeO3/flowcast/internal/catalog/infrastructure/kafka"
 	"github.com/JorgeO3/flowcast/internal/catalog/repository"
 	"github.com/JorgeO3/flowcast/internal/catalog/utils"
 	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -55,7 +55,7 @@ type CreateActEvent struct {
 type CreateActUC struct {
 	Logger    logger.Interface
 	Validator validator.Interface
-	Producer  redpanda.Producer
+	Producer  *kafka.Producer
 	Repos     *repository.Repositories
 }
 
@@ -77,7 +77,7 @@ func WithCreateActValidator(validator validator.Interface) CreateActUCOpts {
 }
 
 // WithCreateActProducer sets the Producer in the CreateActUC.
-func WithCreateActProducer(producer redpanda.Producer) CreateActUCOpts {
+func WithCreateActProducer(producer *kafka.Producer) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Producer = producer
 	}

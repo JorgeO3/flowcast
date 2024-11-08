@@ -44,13 +44,6 @@ func WithGetActsUC(uc *usecase.GetActsUC) Opts {
 	}
 }
 
-// WithCreateManyUC sets the CreateManyUC in the controller.
-func WithCreateManyUC(uc *usecase.CreateManyUC) Opts {
-	return func(c *Controller) {
-		c.CreateManyUC = uc
-	}
-}
-
 // WithLogger sets the logger in the controller.
 func WithLogger(l logger.Interface) Opts {
 	return func(c *Controller) {

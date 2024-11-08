@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/JorgeO3/flowcast/pkg/logger"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
@@ -34,7 +33,7 @@ func TestMongoTx_Run_Success(t *testing.T) {
 		}
 
 		// Ejecutar la transacción
-		err = txManager.Run(context.Background(), func(ctx mongo.SessionContext) error {
+		err = txManager.Run(context.Background(), func(_ context.Context) error {
 			// Aquí irían las operaciones de la base de datos
 			return nil
 		})
@@ -70,7 +69,7 @@ func TestMongoTx_Run_FunctionError(t *testing.T) {
 
 		// Ejecutar la transacción que falla
 		expectedErr := errors.New("function failed")
-		err = txManager.Run(context.Background(), func(ctx mongo.SessionContext) error {
+		err = txManager.Run(context.Background(), func(_ context.Context) error {
 			return expectedErr
 		})
 
@@ -99,7 +98,7 @@ func TestMongoTx_Run_PanicRecovery(t *testing.T) {
 		}
 
 		// Ejecutar la transacción que provoca un pánico
-		err = txManager.Run(context.Background(), func(ctx mongo.SessionContext) error {
+		err = txManager.Run(context.Background(), func(_ context.Context) error {
 			panic("unexpected panic")
 		})
 
@@ -132,7 +131,7 @@ func TestMongoTx_Run_CommitError(t *testing.T) {
 		}
 
 		// Ejecutar la transacción
-		err = txManager.Run(context.Background(), func(ctx mongo.SessionContext) error {
+		err = txManager.Run(context.Background(), func(_ context.Context) error {
 			// Aquí irían las operaciones de la base de datos
 			return nil
 		})
@@ -169,7 +168,7 @@ func TestMongoTx_Run_AbortTransactionError(t *testing.T) {
 		}
 
 		// Ejecutar la transacción que provoca un pánico
-		err = txManager.Run(context.Background(), func(ctx mongo.SessionContext) error {
+		err = txManager.Run(context.Background(), func(_ context.Context) error {
 			panic("unexpected panic")
 		})
 
@@ -197,7 +196,7 @@ func TestMongoTx_Run_ContextCancelledBeforeStart(t *testing.T) {
 		}
 
 		// Ejecutar la transacción
-		err = txManager.Run(ctx, func(ctx mongo.SessionContext) error {
+		err = txManager.Run(ctx, func(_ context.Context) error {
 			// Aquí irían las operaciones de la base de datos
 			return nil
 		})
@@ -232,7 +231,7 @@ func TestMongoTx_Run_ContextCancelledDuringTransaction(t *testing.T) {
 		// Ejecutar la transacción en una goroutine
 		done := make(chan error)
 		go func() {
-			err := txManager.Run(ctx, func(ctx mongo.SessionContext) error {
+			err := txManager.Run(ctx, func(_ context.Context) error {
 				// Simular una operación larga
 				time.Sleep(2 * time.Second)
 				return nil
