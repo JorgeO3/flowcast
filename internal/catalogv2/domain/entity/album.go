@@ -11,3 +11,15 @@ type Album struct {
 	TotalTracks int    `json:"totaltracks,omitempty" bson:"total_tracks,omitempty" validate:"required,min=1"`
 	Songs       []Song `json:"songs,omitempty" bson:"songs,omitempty" validate:"dive"`
 }
+
+// IsEmpty checks if the album is empty
+func (a *Album) IsEmpty() bool {
+	return a == nil ||
+		a.ID == "" ||
+		a.Title == "" ||
+		a.ReleaseDate == "" ||
+		a.Genre == Genre{} ||
+		a.CoverArt == Asset{} ||
+		a.TotalTracks == 0 ||
+		a.Songs == nil
+}

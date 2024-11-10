@@ -37,3 +37,14 @@ type Asset struct {
 	Size int       `json:"size,omitempty" validate:"required,assetsize" bson:"size,omitempty"`
 	URL  string    `json:"url,omitempty" validate:"required,url" bson:"url,omitempty"`
 }
+
+// IsEmpty checks if the asset is empty
+func (a *Asset) IsEmpty() bool {
+	return a == nil ||
+		a.ID == "" ||
+		a.Type == "" ||
+		a.Name == "" ||
+		a.Ext == "" ||
+		a.Size == 0 ||
+		a.URL == ""
+}

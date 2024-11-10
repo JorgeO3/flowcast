@@ -1,7 +1,8 @@
+// Package utils provides utility functions for the catalog service
 package utils
 
 import (
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -11,17 +12,18 @@ func genID() string {
 
 // GenerateIDs generates the IDs for the act and its assets
 func GenerateIDs(act *entity.Act) {
-	if !IsActEmpty(act) && act.ID == "" {
+	if !act.IsEmpty() && act.ID == "" {
 		act.ID = genID()
 	}
 
 	for i := range act.Albums {
-		if !IsAlbumEmpty(&act.Albums[i]) && act.Albums[i].ID == "" {
+
+		if !act.Albums[i].IsEmpty() && act.Albums[i].ID == "" {
 			act.Albums[i].ID = genID()
 		}
 
 		for j := range act.Albums[i].Songs {
-			if !IsSongEmpty(&act.Albums[i].Songs[j]) && act.Albums[i].Songs[j].ID == "" {
+			if !act.Albums[i].Songs[j].IsEmpty() && act.Albums[i].Songs[j].ID == "" {
 				act.Albums[i].Songs[j].ID = genID()
 			}
 		}

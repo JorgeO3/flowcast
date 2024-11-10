@@ -30,3 +30,14 @@ type Act struct {
 	Genres         []Genre `json:"genres,omitempty" bson:"genres,omitempty" validate:"required,dive"`
 	Albums         []Album `json:"albums,omitempty" bson:"albums,omitempty" validate:"dive"`
 }
+
+// IsEmpty checks if the act is empty
+func (a *Act) IsEmpty() bool {
+	return a == nil ||
+		a.ID == "" ||
+		a.Name == "" ||
+		a.Albums == nil ||
+		a.Genres == nil ||
+		a.ProfilePicture == Asset{} ||
+		a.UserID == ""
+}

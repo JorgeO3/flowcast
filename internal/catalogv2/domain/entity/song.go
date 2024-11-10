@@ -32,3 +32,15 @@ type Song struct {
 	ReleaseDate   string        `json:"releaseDate,omitempty" bson:"release_date,omitempty" validate:"required,datetime=2006-01-02"`
 	Duration      int           `json:"duration,omitempty" bson:"duration,omitempty" validate:"required,min=1"`
 }
+
+// IsEmpty checks if the song is empty
+func (s *Song) IsEmpty() bool {
+	return s == nil ||
+		s.ID == "" ||
+		s.Title == "" ||
+		s.AudioFeatures == AudioFeatures{} ||
+		s.File == Asset{} ||
+		s.Genre == Genre{} ||
+		s.ReleaseDate == "" ||
+		s.Duration == 0
+}
