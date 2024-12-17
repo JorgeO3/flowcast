@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
 	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
 	"github.com/JorgeO3/flowcast/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,8 +28,8 @@ func NewRepository(db *mongo.Database, collection string) repository.ActReposito
 	}
 }
 
-// CreateAct implements ActRepository.
-func (m *MongoActRepository) CreateAct(ctx context.Context, act *entity.Act) (string, error) {
+// CreateOne inserts a new act in the database.
+func (m *MongoActRepository) CreateOne(ctx context.Context, act *entity.Act) (string, error) {
 	res, err := m.collection.InsertOne(ctx, act)
 	if err != nil {
 		return "", mongodb.MapError(err)
@@ -38,8 +38,8 @@ func (m *MongoActRepository) CreateAct(ctx context.Context, act *entity.Act) (st
 	return id.String(), nil
 }
 
-// UpdateAct implements ActRepository.
-func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) error {
+// UpdateOne updates an act in the database.
+func (m *MongoActRepository) UpdateOne(ctx context.Context, act *entity.Act) error {
 	filter := bson.M{"_id": act.ID}
 	update := bson.M{"$set": act}
 
@@ -50,8 +50,8 @@ func (m *MongoActRepository) UpdateAct(ctx context.Context, act *entity.Act) err
 	return nil
 }
 
-// GetActByID implements ActRepository.
-func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity.Act, error) {
+// ReadOne retrieves an act from the database.
+func (m *MongoActRepository) ReadOne(ctx context.Context, id string) (*entity.Act, error) {
 	var act entity.Act
 	filter := bson.M{"_id": id}
 
@@ -63,8 +63,8 @@ func (m *MongoActRepository) GetActByID(ctx context.Context, id string) (*entity
 	return &act, nil
 }
 
-// CreateActs implements ActRepository.
-func (m *MongoActRepository) CreateActs(ctx context.Context, acts []entity.Act) ([]string, error) {
+// CreateMany inserts multiple acts in the database.
+func (m *MongoActRepository) CreateMany(ctx context.Context, acts []entity.Act) ([]string, error) {
 	var docs []interface{}
 	for i := range acts {
 		docs = append(docs, &acts[i])
@@ -83,8 +83,8 @@ func (m *MongoActRepository) CreateActs(ctx context.Context, acts []entity.Act) 
 	return ids, nil
 }
 
-// DeleteAct implements ActRepository.
-func (m *MongoActRepository) DeleteAct(ctx context.Context, id string) error {
+// DeleteOne removes an act from the database.
+func (m *MongoActRepository) DeleteOne(ctx context.Context, id string) error {
 	filter := bson.M{"_id": id}
 
 	if _, err := m.collection.DeleteOne(ctx, filter); err != nil {
@@ -95,8 +95,8 @@ func (m *MongoActRepository) DeleteAct(ctx context.Context, id string) error {
 	return nil
 }
 
-// GetActs implements ActRepository.
-func (m *MongoActRepository) GetActs(ctx context.Context, genre string, limit, offset int64) ([]*entity.Act, error) {
+// ReadMany retrieves multiple acts from the database.
+func (m *MongoActRepository) ReadMany(ctx context.Context, genre string, limit, offset int64) ([]*entity.Act, error) {
 	filter := bson.M{}
 	if genre != "" {
 		filter["genre"] = genre

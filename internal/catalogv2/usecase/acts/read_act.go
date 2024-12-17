@@ -3,58 +3,56 @@ package usecase
 import (
 	"context"
 
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository/act"
-	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/validator"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/errors"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/eventbus"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/validator"
 )
 
-// GetActByIDInput is the input of the usecase
-type GetActByIDInput struct {
-	ID primitive.ObjectID `json:"id,omitempty" bson:"_id" validate:"required"`
+// ReadActInput is the input of the usecase
+type ReadActInput struct {
+	ID string `json:"id,omitempty" bson:"_id" validate:"required"`
 }
 
-// GetActByIDOutput is the output of the usecase
-type GetActByIDOutput struct {
+// ReadActOutput is the output of the usecase
+type ReadActOutput struct {
 	*entity.Act
 }
 
-// GetActByIDUC is the use case for getting a musical act by id
-type GetActByIDUC struct {
-	ActRepository act.Repository
-	Logger        logger.Interface
-	Validator     validator.Interface
+// ReadActUC is the use case for getting a musical act by id
+type ReadActUC struct {
+	ActRepository      repository.ActRepository
+	AssetsRepository   repository.AssetsRepository
+	RawaudioRepository repository.RawaudioRepository
+	Logger             logger.Interface
+	Validator          validator.Interface
+	Producer           eventbus.Producer
 }
 
-// GetActByIDOpts type is used for implement the command pattern
-type GetActByIDOpts func(*GetActByIDUC)
+// ReadActByIDOpts type is used for implement the command pattern
+type ReadActByIDOpts func(*ReadActUC)
 
-// WithGetAcByIDRepository adds the repo to the usecase
-func WithGetAcByIDRepository(repo act.Repository) GetActByIDOpts {
-	return func(uc *GetActByIDUC) {
-		uc.ActRepository = repo
-	}
-}
+// WithGetAcByIDRepository adds the repository to the usecase
 
 // WithGetAcByIDLogger adds the logger to the usecase
-func WithGetAcByIDLogger(logg logger.Interface) GetActByIDOpts {
-	return func(uc *GetActByIDUC) {
+func WithGetAcByIDLogger(logg logger.Interface) ReadActByIDOpts {
+	return func(uc *ReadActUC) {
 		uc.Logger = logg
 	}
 }
 
 // WithGetAcByIDValidator adds the validator to the usecase
-func WithGetAcByIDValidator(val validator.Interface) GetActByIDOpts {
-	return func(uc *GetActByIDUC) {
+func WithGetAcByIDValidator(val validator.Interface) ReadActByIDOpts {
+	return func(uc *ReadActUC) {
 		uc.Validator = val
 	}
 }
 
-// NewGetActByID is the constructor for GetActByIDUC uscase
-func NewGetActByID(opts ...GetActByIDOpts) *GetActByIDUC {
-	uc := &GetActByIDUC{}
+// NewReadActByID is the constructor for ReadActUC uscase
+func NewReadActByID(opts ...ReadActByIDOpts) *ReadActUC {
+	uc := &ReadActUC{}
 	for _, opt := range opts {
 		opt(uc)
 	}
@@ -62,20 +60,20 @@ func NewGetActByID(opts ...GetActByIDOpts) *GetActByIDUC {
 }
 
 // Execute perform the CreateAct use case.
-func (uc *GetActByIDUC) Execute(ctx context.Context, input GetActByIDInput) (*GetActByIDOutput, error) {
+func (uc *ReadActUC) Execute(ctx context.Context, input *ReadActInput) (*ReadActOutput, error) {
 	uc.Logger.Info("Getting a musical act by id")
 
 	if err := uc.Validator.Validate(input); err != nil {
-		uc.Logger.Warn("Invalid input: %v", err)
+		uc.Logger.Warnf("invalid input: %v", err)
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	act, err := uc.ActRepository.GetActByID(ctx, input.ID)
+	act, err := uc.ActRepository.ReadOne(ctx, input.ID)
 	if err != nil {
-		uc.Logger.Error("Failed to get act: %v", err)
-		return nil, errors.HandleRepoError(err)
+		uc.Logger.Errorf("error getting act: %v", err)
+		return nil, err
 	}
 
 	uc.Logger.Info("Musical act gotten successfully")
-	return &GetActByIDOutput{act}, nil
+	return &ReadActOutput{act}, nil
 }

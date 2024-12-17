@@ -1,10 +1,10 @@
-// Package eventproducer defines the event producer contract.
-package eventproducer
+// Package eventbus defines the event producer contract.
+package eventbus
 
 import "context"
 
-// Interface defines the methods that an event producer should implement.
-type Interface interface {
+// Producer defines the methods that an event producer should implement.
+type Producer interface {
 	// Publish sends an event to the configured topic.
 	// Returns an error if the publish operation fails.
 	Publish(ctx context.Context, event any, topic string) error

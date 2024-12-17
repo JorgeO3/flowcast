@@ -5,12 +5,12 @@ import (
 	"context"
 	"time"
 
-	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/infrastructure/kafka"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
-	"github.com/JorgeO3/flowcast/internal/catalog/utils"
-	"github.com/JorgeO3/flowcast/pkg/logger"
+	e "github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/errors"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/eventbus"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/utils"
 	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -53,10 +53,12 @@ type CreateActEvent struct {
 
 // CreateActUC is the use case for creating an musical actor.
 type CreateActUC struct {
-	Logger    logger.Interface
-	Validator validator.Interface
-	Producer  *kafka.Producer
-	Repos     *repository.Repositories
+	Logger       logger.Interface
+	Validator    validator.Interface
+	Producer     eventbus.Producer
+	ActRepo      repository.ActRepository
+	AssetsRepo   repository.AssetsRepository
+	RawaudioRepo repository.RawaudioRepository
 }
 
 // CreateActUCOpts represents the functional options for the CreateActUC.
@@ -77,16 +79,30 @@ func WithCreateActValidator(validator validator.Interface) CreateActUCOpts {
 }
 
 // WithCreateActProducer sets the Producer in the CreateActUC.
-func WithCreateActProducer(producer *kafka.Producer) CreateActUCOpts {
+func WithCreateActProducer(producer eventbus.Producer) CreateActUCOpts {
 	return func(uc *CreateActUC) {
 		uc.Producer = producer
 	}
 }
 
-// WithCreateActRepos sets the Repos in the CreateActUC.
-func WithCreateActRepos(repos *repository.Repositories) CreateActUCOpts {
+// WithCreateActRepo sets the repositories in the CreateActUC.
+func WithCreateActRepo(repo repository.ActRepository) CreateActUCOpts {
 	return func(uc *CreateActUC) {
-		uc.Repos = repos
+		uc.ActRepo = repo
+	}
+}
+
+// WithCreateActAssetsRepo sets the assets repository in the CreateActUC.
+func WithCreateActAssetsRepo(repo repository.AssetsRepository) CreateActUCOpts {
+	return func(uc *CreateActUC) {
+		uc.AssetsRepo = repo
+	}
+}
+
+// WithCreateActRawaudioRepo sets the rawaudio repository in the CreateActUC.
+func WithCreateActRawaudioRepo(repo repository.RawaudioRepository) CreateActUCOpts {
+	return func(uc *CreateActUC) {
+		uc.RawaudioRepo = repo
 	}
 }
 
@@ -99,7 +115,7 @@ func NewCreateAct(opts ...CreateActUCOpts) *CreateActUC {
 	return uc
 }
 
-func handleCreatedAssets(output *utils.AssetsProcessorOutput) []AudioServiceAsset {
+func handleCreatedAssets(output *AssetsProcessorOutput) []AudioServiceAsset {
 	createdAssets := make([]AudioServiceAsset, len(output.DeletedAssets))
 	for _, asset := range output.DeletedAssets {
 		createdAssets = append(createdAssets, AudioServiceAsset{
@@ -128,19 +144,19 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 	uc.Logger.Info("Creating a new musical act")
 
 	if err := uc.Validator.Validate(input); err != nil {
-		uc.Logger.Warn("Invalid input: %v", err)
+		uc.Logger.Warnf("invalid input: %v", err)
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	if _, err := uc.Repos.Act.CreateAct(ctx, &input.Act); err != nil {
-		uc.Logger.Error("Error inserting act in db: %v", err)
-		return nil, errors.HandleRepoError(err)
+	if _, err := uc.ActRepo.CreateOne(ctx, &input.Act); err != nil {
+		uc.Logger.Errorf("error inserting act: %v", err)
+		return nil, err
 	}
 
-	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
+	processor := NewAssetsProcessor(ctx, uc.ActRepo, uc.RawaudioRepo, uc.AssetsRepo)
 	output, err := processor.Create(&input.Act)
 	if err != nil {
-		uc.Logger.Error("Error processing assets: %v", err)
+		uc.Logger.Errorf("error processing assets: %v", err)
 		return nil, err
 	}
 
@@ -153,8 +169,8 @@ func (uc *CreateActUC) Execute(ctx context.Context, input CreateActInput) (*Crea
 	}
 
 	if err := uc.Producer.Publish(ctx, event, e.CreateActTopic); err != nil {
-		uc.Logger.Error("Error producing event: %v", err)
-		return nil, errors.NewInternal("error producing event", err)
+		uc.Logger.Errorf("Error publishing event: %v", err)
+		return nil, err
 	}
 
 	uc.Logger.Info("Act created successfully")

@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
+  builder: 'vite',
   css: ["~/assets/css/main.css"],
   modules: [
     "@nuxtjs/tailwindcss",
@@ -25,7 +26,7 @@ export default defineNuxtConfig({
     }
   },
   routeRules: {
-    '/': { static: true, prerender: true },
+    '/': { ssr: true },
     '/auth/**': { static: true, prerender: true },
     '/play/**': { prerender: true },
   },

@@ -48,8 +48,8 @@ func NewProducer(brokers []string, opts ...ProducerOpts) (*Producer, error) {
 	return producer, nil
 }
 
-func (p *Producer) Publish() {
-
+func (p *Producer) Publish() error {
+	return nil
 }
 
 func (p *Producer) Stop() {

@@ -1,4 +1,4 @@
-// Package utils provides utility functions for the catalog service.
+// Package usecase provides utility functions for the catalog service.
 package usecase
 
 import (
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
 	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/utils"
 )
 
@@ -51,12 +51,6 @@ type AssetChange struct {
 	NewAsset   *entity.Asset
 }
 
-// AssetsProcessorParams represents the parameters needed by the AssetsProcessor
-type AssetsProcessorParams struct {
-	Ctx   context.Context
-	Repos *repository.Repositories
-}
-
 // AssetsProcessorOutput represents the output of the AssetsProcessor
 type AssetsProcessorOutput struct {
 	AddedAssets   []AssetChange
@@ -65,16 +59,56 @@ type AssetsProcessorOutput struct {
 }
 
 // AssetsProcessor is responsible for processing changes in assets
+// * The Processor works as follows:
+// * 1. Identify the changes in the assets comparing the old and new acts.
+// * 2. Process all the changes categorizing them as added, deleted or updated assets.
+// *  - Exists 4 types of assets: Audio, ImageAct, ImageAlbum, ImageSong.
+// *  - For each type of asset the process is the following:
+// * 	- For the added assets, generate the URLs.
+// * 	- For the deleted assets, remove the assets from the storage.
+// * 	- For the updated assets, remove the old assets and generate the URLs for the new assets.
+// * 3. Return the output with all the necesary information for the client and audio service.
 type AssetsProcessor struct {
-	ctx   context.Context
-	repos *repository.Repositories
+	ctx          context.Context
+	actRepo      repository.ActRepository
+	rawaudioRepo repository.RawaudioRepository
+	assetsRepo   repository.AssetsRepository
+}
+
+// AssetsProcessorOpt represents a functional option for the AssetsProcessor
+type AssetsProcessorOpt func(*AssetsProcessor)
+
+// WithActRepository sets the act repository in the AssetsProcessor
+func WithActRepository(actRepo repository.ActRepository) AssetsProcessorOpt {
+	return func(processor *AssetsProcessor) {
+		processor.actRepo = actRepo
+	}
+}
+
+// WithRawaudioRepository sets the rawaudio repository in the AssetsProcessor
+func WithRawaudioRepository(rawaudioRepo repository.RawaudioRepository) AssetsProcessorOpt {
+	return func(processor *AssetsProcessor) {
+		processor.rawaudioRepo = rawaudioRepo
+	}
+}
+
+// WithAssetsRepository sets the assets repository in the AssetsProcessor
+func WithAssetsRepository(assetsRepo repository.AssetsRepository) AssetsProcessorOpt {
+	return func(processor *AssetsProcessor) {
+		processor.assetsRepo = assetsRepo
+	}
 }
 
 // NewAssetsProcessor is a constructor for AssetsProcessor
-func NewAssetsProcessor(ctx context.Context, repos *repository.Repositories) *AssetsProcessor {
+func NewAssetsProcessor(ctx context.Context,
+	actRepo repository.ActRepository,
+	rawaudioRepo repository.RawaudioRepository,
+	assetsRepo repository.AssetsRepository) *AssetsProcessor {
 	return &AssetsProcessor{
-		ctx:   ctx,
-		repos: repos,
+		ctx:          ctx,
+		actRepo:      actRepo,
+		rawaudioRepo: rawaudioRepo,
+		assetsRepo:   assetsRepo,
 	}
 }
 
@@ -131,15 +165,15 @@ func (processor *AssetsProcessor) processAssets(oldAct, newAct *entity.Act) ([]A
 
 	if oldAct == nil && newAct != nil {
 		// Creating a new Act
-		GenerateIDs(newAct)
-		GenerateURLs(newAct)
+		utils.GenerateIDs(newAct)
+		utils.GenerateURLs(newAct)
 		assetsToProcess = processor.collectAssetsForCreation(newAct)
 	} else if newAct == nil && oldAct != nil {
 		// Deleting a new act
 		assetsToProcess = processor.collectAssetsForDeletion(oldAct)
 	} else if newAct != nil && oldAct != nil {
 		// Updating an existing act
-		GenerateURLs(newAct)
+		utils.GenerateURLs(newAct)
 		assetsToProcess = processor.collectAssetsForUpdate(oldAct, newAct)
 	} else {
 		return nil, fmt.Errorf("invalid input: both newAct and oldAct are nil")
@@ -153,7 +187,7 @@ func (processor *AssetsProcessor) collectAssetsForCreation(act *entity.Act) []As
 	var assets []AssetChange
 
 	// Profile picture
-	if !isAssetEmpty(act.ProfilePicture) {
+	if !act.ProfilePicture.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Add,
 			EntityType: Act,
@@ -179,7 +213,7 @@ func (processor *AssetsProcessor) collectAssetsForDeletion(act *entity.Act) []As
 	var assets []AssetChange
 
 	// Profile picture
-	if !isAssetEmpty(act.ProfilePicture) {
+	if !act.ProfilePicture.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Delete,
 			UserID:     act.UserID,
@@ -204,7 +238,7 @@ func (processor *AssetsProcessor) collectAssetsForUpdate(oldAct, newAct *entity.
 	var assets []AssetChange
 
 	// Profile picture
-	if !assetsEqual(newAct.ProfilePicture, oldAct.ProfilePicture) {
+	if newAct.ProfilePicture != oldAct.ProfilePicture {
 		assets = append(assets, AssetChange{
 			Action:     Update,
 			EntityType: Act,
@@ -228,7 +262,7 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(act *entity.Act,
 	var assets []AssetChange
 
 	// Album cover art
-	if !isAssetEmpty(album.CoverArt) {
+	if !album.CoverArt.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Add,
 			EntityType: Album,
@@ -244,7 +278,7 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(act *entity.Act,
 	// Songs
 	for _, song := range album.Songs {
 		// If the song has a file
-		if !isAssetEmpty(song.File) {
+		if !song.File.IsEmpty() {
 			assets = append(assets, AssetChange{
 				Action:     Add,
 				EntityType: Song,
@@ -259,7 +293,7 @@ func (processor *AssetsProcessor) collectAlbumAssetsForCreation(act *entity.Act,
 		}
 
 		// If the song has cover art
-		if !isAssetEmpty(song.CoverArt) {
+		if !song.CoverArt.IsEmpty() {
 			assets = append(assets, AssetChange{
 				Action:     Add,
 				EntityType: Song,
@@ -282,7 +316,7 @@ func (processor *AssetsProcessor) collectAlbumAssetsForDeletion(act *entity.Act,
 	var assets []AssetChange
 
 	// Album cover art
-	if !isAssetEmpty(album.CoverArt) {
+	if !album.CoverArt.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Delete,
 			EntityType: Album,
@@ -320,7 +354,7 @@ func (processor *AssetsProcessor) compareAlbums(oldAct, newAct *entity.Act) []As
 		}
 
 		// Album cover art
-		if !assetsEqual(newAlbum.CoverArt, oldAlbum.CoverArt) {
+		if newAlbum.CoverArt != oldAlbum.CoverArt {
 			assets = append(assets, AssetChange{
 				Action:     Update,
 				EntityType: Album,
@@ -366,7 +400,7 @@ func (processor *AssetsProcessor) compareSongs(act *entity.Act, oldAlbum, newAlb
 		}
 
 		// Song file
-		if !assetsEqual(newSong.File, oldSong.File) {
+		if newSong.File != oldSong.File {
 			assets = append(assets, AssetChange{
 				Action:     Update,
 				EntityType: Song,
@@ -382,7 +416,7 @@ func (processor *AssetsProcessor) compareSongs(act *entity.Act, oldAlbum, newAlb
 		}
 
 		// Song cover art
-		if !assetsEqual(newSong.CoverArt, oldSong.CoverArt) {
+		if newSong.CoverArt != oldSong.CoverArt {
 			assets = append(assets, AssetChange{
 				Action:     Update,
 				EntityType: Song,
@@ -425,7 +459,7 @@ func (processor *AssetsProcessor) collectSongAssetsForCreation(act *entity.Act, 
 		NewAsset:   &song.File,
 	})
 	// If the song has cover art
-	if !isAssetEmpty(song.CoverArt) {
+	if !song.CoverArt.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Add,
 			EntityType: Song,
@@ -458,7 +492,7 @@ func (processor *AssetsProcessor) collectSongAssetsForDeletion(act *entity.Act, 
 		OldAsset:   &song.File,
 	})
 	// If the song has cover art
-	if !isAssetEmpty(song.CoverArt) {
+	if !song.CoverArt.IsEmpty() {
 		assets = append(assets, AssetChange{
 			Action:     Delete,
 			EntityType: Song,
@@ -478,7 +512,7 @@ func (processor *AssetsProcessor) collectSongAssetsForDeletion(act *entity.Act, 
 // FIXME: This solution is not scalable. We need to find a better way to compare assets.
 // handleAssets processes the collected assets
 func (processor *AssetsProcessor) handleAssets(assets []AssetChange) (*AssetsProcessorOutput, error) {
-	var assetsURLs []AssetURL
+	var assetsURLs []utils.AssetURL
 	var addedAssets []AssetChange
 	var deletedAssets []AssetChange
 
@@ -514,7 +548,7 @@ func (processor *AssetsProcessor) handleAssets(assets []AssetChange) (*AssetsPro
 
 // FIXME: This code can be
 // handleAddedAsset processes added assets
-func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs []AssetURL, addedAssets []AssetChange) ([]AssetURL, []AssetChange, error) {
+func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs []utils.AssetURL, addedAssets []AssetChange) ([]utils.AssetURL, []AssetChange, error) {
 	// Generate a presigned URL for uploading the file
 	var presignedURL string
 	var err error
@@ -534,7 +568,7 @@ func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs
 		return assetsURLs, addedAssets, fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
 
-	assetURL := AssetURL{
+	assetURL := utils.AssetURL{
 		URL:  presignedURL,
 		Name: asset.NewAsset.Name,
 		Type: asset.NewAsset.Type,
@@ -546,15 +580,15 @@ func (processor *AssetsProcessor) handleAddedAsset(asset AssetChange, assetsURLs
 }
 
 func (processor *AssetsProcessor) singAudioURL(path string) (string, error) {
-	return processor.repos.RawAudio.GeneratePresignedURL(processor.ctx, path, URLExpirationTime)
+	return processor.rawaudioRepo.GeneratePresignedURL(processor.ctx, path, utils.URLExpirationTime)
 }
 
 func (processor *AssetsProcessor) singImageURL(path string) (string, error) {
-	return processor.repos.Assets.GeneratePresignedURL(processor.ctx, path, URLExpirationTime)
+	return processor.assetsRepo.GeneratePresignedURL(processor.ctx, path, utils.URLExpirationTime)
 }
 
 // handleUpdatedAsset processes updated assets
-func (processor *AssetsProcessor) handleUpdatedAsset(asset AssetChange, assetsURLs []AssetURL, addedAssets []AssetChange) ([]AssetURL, []AssetChange, error) {
+func (processor *AssetsProcessor) handleUpdatedAsset(asset AssetChange, assetsURLs []utils.AssetURL, addedAssets []AssetChange) ([]utils.AssetURL, []AssetChange, error) {
 	// Treat updated assets as new assets
 	return processor.handleAddedAsset(asset, assetsURLs, addedAssets)
 }

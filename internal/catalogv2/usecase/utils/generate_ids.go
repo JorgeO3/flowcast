@@ -17,7 +17,6 @@ func GenerateIDs(act *entity.Act) {
 	}
 
 	for i := range act.Albums {
-
 		if !act.Albums[i].IsEmpty() && act.Albums[i].ID == "" {
 			act.Albums[i].ID = genID()
 		}

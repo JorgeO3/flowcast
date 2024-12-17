@@ -4,22 +4,21 @@ import (
 	"context"
 	"time"
 
-	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/infrastructure/kafka"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
-	"github.com/JorgeO3/flowcast/internal/catalog/utils"
-	"github.com/JorgeO3/flowcast/pkg/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/errors"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/eventbus"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/utils"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/validator"
 	"github.com/JorgeO3/flowcast/pkg/mongotx"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
-	"github.com/JorgeO3/flowcast/pkg/validator"
 	"github.com/google/uuid"
 )
 
 // UpdateActInput represents the input required to update a musical act.
 type UpdateActInput struct {
-	Act    e.Act  `json:"act" validate:"required,dive"`
-	UserID string `json:"userId" validate:"required"`
+	Act    entity.Act `json:"act" validate:"required,dive"`
+	UserID string     `json:"userId" validate:"required"`
 }
 
 // UpdateActOutput represents the result of updating a musical act.
@@ -37,34 +36,43 @@ type BaseEvent struct {
 // UpdateActEvent represents an event triggered after updating an act.
 type UpdateActEvent struct {
 	BaseEvent
-	DeletedAssets []utils.AssetChange `json:"deletedAssets"`
-	AddedAssets   []utils.AssetChange `json:"addedAssets"`
+	DeletedAssets []AssetChange `json:"deletedAssets"`
+	AddedAssets   []AssetChange `json:"addedAssets"`
 }
 
 // UpdateActUC is the use case responsible for updating a musical act.
 type UpdateActUC struct {
-	repos     *repository.Repositories
 	logger    logger.Interface
+	producer  eventbus.Producer
 	validator validator.Interface
 
-	producer       *kafka.Producer
 	transactionMgr mongotx.TxManager
+	actRepo        repository.ActRepository
+	assetsRepo     repository.AssetsRepository
+	rawaudioRepo   repository.RawaudioRepository
 }
 
 // UpdateActUCOpt represents a functional option for configuring UpdateActUC.
 type UpdateActUCOpt func(*UpdateActUC)
 
-// optionHelper is a helper function to create functional options.
-func optionHelper(setter func(*UpdateActUC)) UpdateActUCOpt {
+// WithUpdateActRepository sets the repository in the UpdateActUC.
+func WithUpdateActRepository(repo repository.ActRepository) UpdateActUCOpt {
 	return func(uc *UpdateActUC) {
-		setter(uc)
+		uc.actRepo = repo
 	}
 }
 
-// WithUpdateRepositories sets the repositories in the UpdateActUC.
-func WithUpdateRepositories(repo *repository.Repositories) UpdateActUCOpt {
+// WithUpdateActAssetsRepository sets the repository in the UpdateActUC.
+func WithUpdateActAssetsRepository(repo repository.AssetsRepository) UpdateActUCOpt {
 	return func(uc *UpdateActUC) {
-		uc.repos = repo
+		uc.assetsRepo = repo
+	}
+}
+
+// WithUpdateActRawaudioRepository sets the repository in the UpdateActUC.
+func WithUpdateActRawaudioRepository(repo repository.RawaudioRepository) UpdateActUCOpt {
+	return func(uc *UpdateActUC) {
+		uc.rawaudioRepo = repo
 	}
 }
 
@@ -77,13 +85,13 @@ func WithUpdateActLogger(logger logger.Interface) UpdateActUCOpt {
 
 // WithUpdateActValidator sets the Validator in UpdateActUC.
 func WithUpdateActValidator(v validator.Interface) UpdateActUCOpt {
-	return optionHelper(func(uc *UpdateActUC) {
+	return func(uc *UpdateActUC) {
 		uc.validator = v
-	})
+	}
 }
 
 // WithUpdateActProducer sets the Producer in UpdateActUC.
-func WithUpdateActProducer(producer redpanda.Producer) UpdateActUCOpt {
+func WithUpdateActProducer(producer eventbus.Producer) UpdateActUCOpt {
 	return func(uc *UpdateActUC) {
 		uc.producer = producer
 	}
@@ -105,7 +113,7 @@ func NewUpdateAct(opts ...UpdateActUCOpt) *UpdateActUC {
 	return uc
 }
 
-func (uc *UpdateActUC) handleUpdateEvent(userID string, addedAssets, deletedAssets []utils.AssetChange) error {
+func (uc *UpdateActUC) handleUpdateEvent(ctx context.Context, userID string, addedAssets, deletedAssets []AssetChange) error {
 	event := UpdateActEvent{
 		BaseEvent: BaseEvent{
 			EventID:   uuid.New().String(),
@@ -116,47 +124,35 @@ func (uc *UpdateActUC) handleUpdateEvent(userID string, addedAssets, deletedAsse
 		AddedAssets:   addedAssets,
 	}
 
-	if err := uc.producer.Publish(event, e.UpdateActTopic); err != nil {
-		uc.logger.Error("Failed to publish event: %v", err)
-		return errors.NewInternal("failed to publish event", err)
+	if err := uc.producer.Publish(ctx, event, entity.UpdateActTopic); err != nil {
+		uc.logger.Errorf("failed to publish event: %v", err)
+		return err
 	}
 
 	return nil
 }
 
-func (uc *UpdateActUC) updateActTransaction(ctx context.Context, newAct *e.Act, ucOutput *UpdateActOutput) error {
-	oldAct, err := uc.repos.Act.GetActByID(ctx, newAct.ID)
+func (uc *UpdateActUC) updateActTransaction(ctx context.Context, newAct *entity.Act, ucOutput *UpdateActOutput) error {
+	oldAct, err := uc.actRepo.ReadOne(ctx, newAct.ID)
 	if err != nil {
-		return errors.HandleRepoError(err)
-	}
-
-	// * The Processor works as follows:
-	// * 1. Identify the changes in the assets comparing the old and new acts.
-	// * 2. Process all the changes categorizing them as added, deleted or updated assets.
-	// *  - Exists 4 types of assets: Audio, ImageAct, ImageAlbum, ImageSong.
-	// *  - For each type of asset the process is the following:
-	// * 	- For the added assets, generate the URLs.
-	// * 	- For the deleted assets, remove the assets from the storage.
-	// * 	- For the updated assets, remove the old assets and generate the URLs for the new assets.
-	// * 3. Return the output with all the necesary information for the client and audio service.
-	params := utils.NewAssetsProcessorParams(ctx, oldAct, newAct, uc.repos)
-	processor := utils.NewAssetsProcessor(params)
-	processor.IdentifyChanges()
-	output, err := processor.ProcessChanges()
-	if err != nil {
-		uc.logger.Error("Failed to process asset changes: %v", err)
+		uc.logger.Errorf("failed to read act from repository: %v", err)
 		return err
 	}
 
-	if err := uc.repos.Act.UpdateAct(ctx, newAct); err != nil {
-		return errors.HandleRepoError(err)
-	}
-
-	if err := uc.handleUpdateEvent(newAct.UserID, output.GetAddedAssets(), output.GetDeletedAssets()); err != nil {
+	if err := uc.actRepo.UpdateOne(ctx, newAct); err != nil {
+		uc.logger.Errorf("error updating act: %v", err)
 		return err
 	}
 
-	ucOutput.AssetURLs = output.GetAssetsURLs()
+	processor := NewAssetsProcessor(ctx, uc.actRepo, uc.rawaudioRepo, uc.assetsRepo)
+	output, err := processor.Update(oldAct, newAct)
+	if err != nil {
+		uc.logger.Errorf("error processing assets: %v", err)
+		return err
+	}
+
+	// TODO: Handle the event
+
 	return nil
 }
 
@@ -166,7 +162,7 @@ func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*Upda
 
 	// Validate the input
 	if err := uc.validator.Validate(input); err != nil {
-		uc.logger.Warn("Invalid input: %v", err)
+		uc.logger.Warnf("invalid input: %v", err)
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
@@ -176,7 +172,7 @@ func (uc *UpdateActUC) Execute(ctx context.Context, input UpdateActInput) (*Upda
 		return uc.updateActTransaction(ctx, &input.Act, &output)
 	})
 	if err != nil {
-		uc.logger.Error("Act update failed: %v", err)
+		uc.logger.Errorf("error updating act: %v", err)
 		return nil, err
 	}
 

@@ -3,15 +3,13 @@ package usecase
 import (
 	"context"
 
-	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
-	"github.com/JorgeO3/flowcast/internal/catalog/utils"
-	"github.com/JorgeO3/flowcast/pkg/logger"
+	e "github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/errors"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/eventbus"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/validator"
 	"github.com/JorgeO3/flowcast/pkg/mongotx"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
-	"github.com/JorgeO3/flowcast/pkg/validator"
-	"github.com/google/uuid"
 )
 
 // DeleteActInput represents the input parameters required to delete a musical act.
@@ -34,11 +32,13 @@ type DeleteActEvent struct {
 // It depends on ActRepository for data access, Logger for logging activities,
 // and Validator for input validation.
 type DeleteActUC struct {
-	Logger    logger.Interface
-	Validator validator.Interface
-	Producer  redpanda.Producer
-	Repos     *repository.Repositories
-	tx        *mongotx.MongoTx
+	Logger       logger.Interface
+	Validator    validator.Interface
+	Producer     eventbus.Producer
+	ActRepo      repository.ActRepository
+	AssetsRepo   repository.AssetsRepository
+	RawaudioRepo repository.RawaudioRepository
+	tx           *mongotx.MongoTx
 }
 
 // DeleteActOpts defines a functional option for configuring DeleteActUC.
@@ -63,17 +63,33 @@ func WithDeleteActValidator(val validator.Interface) DeleteActOpts {
 
 // WithDeleteActProducer injects the Producer into the use case.
 // It allows the use case to produce messages to a message broker.
-func WithDeleteActProducer(prod redpanda.Producer) DeleteActOpts {
+func WithDeleteActProducer(prod eventbus.Producer) DeleteActOpts {
 	return func(uc *DeleteActUC) {
 		uc.Producer = prod
 	}
 }
 
-// WithDeleteActRepositories injects the Repositories into the use case.
-// It provides access to the data repositories needed by the use case.
-func WithDeleteActRepositories(repos *repository.Repositories) DeleteActOpts {
+// WithDeleteActActRepo injects the ActRepository into the use case.
+// It allows the use case to access and manipulate act data in the repository.
+func WithDeleteActActRepo(repo repository.ActRepository) DeleteActOpts {
 	return func(uc *DeleteActUC) {
-		uc.Repos = repos
+		uc.ActRepo = repo
+	}
+}
+
+// WithDeleteActAssetsRepo injects the AssetsRepository into the use case.
+// It allows the use case to access and manipulate asset data in the repository.
+func WithDeleteActAssetsRepo(repo repository.AssetsRepository) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.AssetsRepo = repo
+	}
+}
+
+// WithDeleteActRawaudioRepo injects the RawaudioRepository into the use case.
+// It allows the use case to access and manipulate rawaudio data in the repository.
+func WithDeleteActRawaudioRepo(repo repository.RawaudioRepository) DeleteActOpts {
+	return func(uc *DeleteActUC) {
+		uc.RawaudioRepo = repo
 	}
 }
 
@@ -89,18 +105,17 @@ func NewDeleteAct(opts ...DeleteActOpts) *DeleteActUC {
 }
 
 func (uc *DeleteActUC) handleDelete(ctx context.Context, id string) (*e.Act, error) {
-
 	// Get the act from the repository using the provided ID.
-	act, err := uc.Repos.Act.GetActByID(ctx, id)
+	act, err := uc.ActRepo.ReadOne(ctx, id)
 	if err != nil {
-		uc.Logger.Error("Failed to get act from repository", "error", err, "id", id)
-		return nil, errors.HandleRepoError(err)
+		uc.Logger.Errorf("failed to read act from repository: %v", err)
+		return nil, err
 	}
 
 	// Attempt to delete the act from the repository using the provided ID.
-	if err := uc.Repos.Act.DeleteAct(ctx, id); err != nil {
-		uc.Logger.Error("Failed to delete act from repository", "error", err, "id", id)
-		return nil, errors.HandleRepoError(err)
+	if err := uc.ActRepo.DeleteOne(ctx, id); err != nil {
+		uc.Logger.Errorf("failed to delete act from repository: %v", err)
+		return nil, err
 	}
 
 	return act, nil
@@ -118,11 +133,11 @@ func getAssetIDs(assets []AudioServiceAsset) []string {
 // It validates the input, deletes the act from the repository,
 // and returns the result or an appropriate error.
 func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*DeleteActOutput, error) {
-	uc.Logger.Info("Deleting act from the catalog", "id", input.ID)
+	uc.Logger.Infof("deleting musical act from the catalog")
 
 	// Validate input parameters to ensure required fields are present and correct.
 	if err := uc.Validator.Validate(input); err != nil {
-		uc.Logger.Warn("Invalid input parameters", "error", err)
+		uc.Logger.Warnf("invalid input: %v", err)
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
@@ -134,26 +149,24 @@ func (uc *DeleteActUC) Execute(ctx context.Context, input DeleteActInput) (*Dele
 	})
 
 	if err != nil {
-		uc.Logger.Error("Failed to start transaction", "error", err)
-		return nil, errors.NewInternal("error starting transaction", err)
-	}
-
-	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
-	output, err := processor.Delete(act)
-	if err != nil {
-		uc.Logger.Error("Error processing assets", "error", err)
+		uc.Logger.Errorf("error deleting act: %v", err)
 		return nil, err
 	}
 
-	ids := getAssetIDs(output.DeletedAssets)
-	event := &DeleteActEvent{
-		EventID: uuid.New().String(),
+	processor := NewAssetsProcessor(ctx, uc.ActRepo, uc.RawaudioRepo, uc.AssetsRepo)
+	_, err = processor.Delete(act)
+	if err != nil {
+		uc.Logger.Errorf("error processing assets: %v", err)
+		return nil, err
 	}
+
+	// FIXME: Implement the publisher correctly
+	event := struct{}{}
 
 	// Produce the event to notify other services about the act deletion.
 	if err := uc.Producer.Publish(ctx, event, e.DeleteActTopic); err != nil {
-		uc.Logger.Error("Failed to produce event", "error", err)
-		return nil, errors.NewInternal("error producing event", err)
+		uc.Logger.Errorf("error producing event: %v", err)
+		return nil, err
 	}
 
 	// Return an empty output indicating successful deletion.

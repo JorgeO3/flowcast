@@ -2,124 +2,127 @@ package usecase
 
 import (
 	"context"
-	"time"
 
-	e "github.com/JorgeO3/flowcast/internal/catalog/entity"
-	"github.com/JorgeO3/flowcast/internal/catalog/errors"
-	"github.com/JorgeO3/flowcast/internal/catalog/events"
-	"github.com/JorgeO3/flowcast/internal/catalog/repository"
-	"github.com/JorgeO3/flowcast/internal/catalog/utils"
-	"github.com/JorgeO3/flowcast/pkg/logger"
-	"github.com/JorgeO3/flowcast/pkg/redpanda"
-	"github.com/JorgeO3/flowcast/pkg/validator"
-	"github.com/google/uuid"
+	e "github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/errors"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/repository"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/eventbus"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/logger"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/utils"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/usecase/validator"
 )
 
-// CreateActsInput represents the input for the CreateActs use case.
-type CreateActsInput struct {
+// CreateManyInput represents the input for the CreateMany use case.
+type CreateManyInput struct {
 	Acts []e.Act `json:"acts" validate:"required,dive,required"`
 }
 
-// CreateActsOutput represents the output for the CreateActs use case.
-type CreateActsOutput struct {
+// CreateManyOutput represents the output for the CreateMany use case.
+type CreateManyOutput struct {
 	IDs              []string            `json:"ids,omitempty"`
 	AssetURLs        []utils.AssetURL    `json:"assets,omitempty"`
 	ProcessingAssets []AudioServiceAsset `json:"processingAssets,omitempty"`
 }
 
-// CreateActsEvent represents a song link.
-type CreateActsEvent struct {
-	EventID   string    `json:"eventId"`
-	UserIDs   []string  `json:"userIds"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+// CreateManyUC is the use case for creating multiple musical actors.
+type CreateManyUC struct {
+	Logger       logger.Interface
+	Validator    validator.Interface
+	Producer     eventbus.Producer
+	ActRepo      repository.ActRepository
+	AssetsRepo   repository.AssetsRepository
+	RawaudioRepo repository.RawaudioRepository
 }
 
-// TODO: Fix the redpanda producer generic type
+// CreateManyUCOpts represents the functional options for the CreateManyUC.
+type CreateManyUCOpts func(uc *CreateManyUC)
 
-// CreateActsUC is the use case for creating multiple musical actors.
-type CreateActsUC struct {
-	Logger    logger.Interface
-	Validator validator.Interface
-	Producer  redpanda.Producer[events.BaseAudioEvent]
-	Repos     *repository.Repositories
-}
-
-// CreateActsUCOpts represents the functional options for the CreateActsUC.
-type CreateActsUCOpts func(uc *CreateActsUC)
-
-// WithCreateActsLogger sets the logger in the CreateActsUC.
-func WithCreateActsLogger(logger logger.Interface) CreateActsUCOpts {
-	return func(uc *CreateActsUC) {
+// WithCreateManyLogger sets the logger in the CreateManyUC.
+func WithCreateManyLogger(logger logger.Interface) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
 		uc.Logger = logger
 	}
 }
 
-// WithCreateActsValidator sets the validator in the CreateActsUC.
-func WithCreateActsValidator(validator validator.Interface) CreateActsUCOpts {
-	return func(uc *CreateActsUC) {
+// WithCreateManyValidator sets the validator in the CreateManyUC.
+func WithCreateManyValidator(validator validator.Interface) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
 		uc.Validator = validator
 	}
 }
 
 // TODO: Fix the redpanda producer generic type
 
-// WithCreateActsProducer sets the producer in the CreateActsUC.
-func WithCreateActsProducer(producer redpanda.Producer[events.BaseAudioEvent]) CreateActsUCOpts {
-	return func(uc *CreateActsUC) {
+// WithCreateManyProducer sets the producer in the CreateManyUC.
+func WithCreateManyProducer(producer eventbus.Producer) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
 		uc.Producer = producer
 	}
 }
 
-// WithCreateActsRepos sets the repositories in the CreateActsUC.
-func WithCreateActsRepos(repos *repository.Repositories) CreateActsUCOpts {
-	return func(uc *CreateActsUC) {
-		uc.Repos = repos
+// WithCreateManyActRepo sets the repositories in the CreateManyUC.
+func WithCreateManyActRepo(repo repository.ActRepository) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
+		uc.ActRepo = repo
 	}
 }
 
-// NewCreateActs is the constructor for CreateActsUC use case
-func NewCreateActs(opts ...CreateActsUCOpts) *CreateActsUC {
-	uc := &CreateActsUC{}
+// WithCreateManyAssetsRepo sets the repositories in the CreateManyUC.
+func WithCreateManyAssetsRepo(repo repository.AssetsRepository) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
+		uc.AssetsRepo = repo
+	}
+}
+
+// WithCreateManyRawaudioRepo sets the repositories in the CreateManyUC.
+func WithCreateManyRawaudioRepo(repo repository.RawaudioRepository) CreateManyUCOpts {
+	return func(uc *CreateManyUC) {
+		uc.RawaudioRepo = repo
+	}
+}
+
+// NewCreateMany is the constructor for CreateManyUC use case
+func NewCreateMany(opts ...CreateManyUCOpts) *CreateManyUC {
+	uc := &CreateManyUC{}
 	for _, opt := range opts {
 		opt(uc)
 	}
 	return uc
 }
 
-// Execute executes the CreateActs use case
-func (uc *CreateActsUC) Execute(ctx context.Context, input CreateActsInput) (*CreateActsOutput, error) {
+// Execute executes the CreateMany use case
+func (uc *CreateManyUC) Execute(ctx context.Context, input CreateManyInput) (*CreateManyOutput, error) {
 	uc.Logger.Info("Creating multiple musical acts")
 
 	if err := uc.Validator.Validate(input); err != nil {
-		uc.Logger.Warn("Invalid input: %v", err)
+		uc.Logger.Warnf("Invalid input: %v", err)
 		return nil, errors.NewValidation("invalid input", err)
 	}
 
-	ids, err := uc.Repos.Act.CreateActs(ctx, input.Acts)
+	// Create acts return IDs
+	_, err := uc.ActRepo.CreateMany(ctx, input.Acts)
 	if err != nil {
-		uc.Logger.Error("Error inserting acts in db: %v", err)
-		return nil, errors.HandleRepoError(err)
+		uc.Logger.Errorf("Error inserting acts in db: %v", err)
+		return nil, err
 	}
 
-	processor := utils.NewAssetsProcessor(ctx, uc.Repos)
+	processor := NewAssetsProcessor(ctx, uc.ActRepo, uc.RawaudioRepo, uc.AssetsRepo)
 	output, err := processor.CreateMany(input.Acts)
 	if err != nil {
-		uc.Logger.Error("Error processing assets: %v", err)
+		uc.Logger.Errorf("Error processing assets: %v", err)
 		return nil, err
 	}
 
-	createdAssets := handleCreatedAssets(output)
-	event := CreateActsEvent{
-		EventID:   uuid.New().String(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	_ = handleCreatedAssets(output)
+	// createdAssets := handleCreatedAssets(output)
+	// FIXME: Implement the event correctly
+	event := struct{}{}
 
-	if err := uc.Producer.Publish(ctx, event, e.CreateActsTopic); err != nil {
-		uc.Logger.Error("Error producing event: %v", err)
+	if err := uc.Producer.Publish(ctx, event, ""); err != nil {
+		uc.Logger.Errorf("Error producing event: %v", err)
 		return nil, err
 	}
 
-	return &CreateActsOutput{IDs: ids, AssetURLs: output.AssetsURLs, ProcessingAssets: createdAssets}, nil
+	// FIXME: Implement the output correctly
+	return &CreateManyOutput{}, nil
 }

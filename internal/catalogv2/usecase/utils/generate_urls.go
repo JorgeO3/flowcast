@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/JorgeO3/flowcast/internal/catalog/entity"
+	"github.com/JorgeO3/flowcast/internal/catalogv2/domain/entity"
 )
 
 const (
